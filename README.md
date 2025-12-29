@@ -7,8 +7,13 @@ This repository is being migrated from EPAM GitLab to GitHub.
 
 **Source**: https://git.epam.com/rostyslav_antonov/adventofcode
 
-To complete the migration with all branches, please see:
-- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Detailed migration instructions
+### Quick Start
+See [QUICKSTART.md](QUICKSTART.md) for simple 3-step migration instructions.
+
+### Documentation
+- [QUICKSTART.md](QUICKSTART.md) - Simple 3-step migration guide
+- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Detailed migration instructions  
+- [MIGRATION_STATUS.md](MIGRATION_STATUS.md) - Current status and context
 - [migrate-repository.sh](migrate-repository.sh) - Automated migration script
 
-The EPAM GitLab repository requires authentication and cannot be accessed from automated environments. The migration must be performed manually with proper credentials.
+**Note**: The EPAM GitLab repository requires authentication and cannot be accessed from automated environments. The migration must be performed manually with proper credentials.
