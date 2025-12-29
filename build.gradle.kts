@@ -1,35 +1,10 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.ktlint) apply false
 }
 
 group = "advent.of.code"
 version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.suite)
-}
-
-kotlin {
-    jvmToolchain(21)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-ktlint {
-    version.set("1.8.0")
-    android.set(false)
-    outputToConsole.set(true)
-    ignoreFailures.set(false)
-}
 
 tasks.register("installGitHook") {
     doLast {
@@ -73,6 +48,14 @@ tasks.register("installGitHook") {
     }
 }
 
-tasks.named("build") {
-    dependsOn("installGitHook")
+subprojects {
+    tasks.register("setupHooks") {
+        dependsOn(rootProject.tasks.named("installGitHook"))
+    }
+
+    tasks.matching { it.name == "build" }.configureEach {
+        dependsOn("setupHooks")
+    }
 }
+
+
