@@ -38,6 +38,23 @@ tasks.register("installGitHook") {
             gitHooksDir.mkdirs()
         }
 
+        // Install pre-commit hook
+        val preCommitHook = file(".git/hooks/pre-commit")
+        preCommitHook.writeText(
+            """
+            #!/bin/sh
+            echo "Running ktlint check before commit..."
+            ./gradlew ktlintCheck --daemon
+            if [ ${'$'}? -ne 0 ]; then
+                echo "ktlint check failed. Please fix the issues before committing."
+                exit 1
+            fi
+            """.trimIndent(),
+        )
+        preCommitHook.setExecutable(true)
+        println("Git pre-commit hook installed successfully!")
+
+        // Install pre-push hook
         val prePushHook = file(".git/hooks/pre-push")
         prePushHook.writeText(
             """
