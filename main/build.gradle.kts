@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":advent-2015"))
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlin.test)
