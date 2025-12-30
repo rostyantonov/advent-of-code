@@ -39,9 +39,11 @@ object ParallelRunner {
         maxConcurrency: Int = Runtime.getRuntime().availableProcessors(),
     ): List<DayResult> =
         runBlocking(Dispatchers.Default.limitedParallelism(maxConcurrency)) {
-            DayEnum.entries.map { day ->
-                async { runDay(year, day) }
-            }.awaitAll().filterNotNull()
+            DayEnum.entries
+                .map { day ->
+                    async { runDay(year, day) }
+                }.awaitAll()
+                .filterNotNull()
         }
 
     /**

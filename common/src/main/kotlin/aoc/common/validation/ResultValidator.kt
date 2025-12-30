@@ -65,8 +65,7 @@ object ResultValidator {
      * @param result Result to validate
      * @throws ValidationException if result is null
      */
-    fun validateNotNull(result: Any?): Any =
-        result ?: throw ValidationException("Result is null")
+    fun validateNotNull(result: Any?): Any = result ?: throw ValidationException("Result is null")
 
     /**
      * Validate that a result equals expected value.
@@ -96,7 +95,7 @@ object ResultValidator {
         if (result !in validValues) {
             throw ValidationException("Result $result is not in valid set: $validValues")
         }
-        return result
+        return result!!
     }
 
     /**

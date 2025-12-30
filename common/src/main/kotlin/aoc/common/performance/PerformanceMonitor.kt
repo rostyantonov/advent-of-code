@@ -7,8 +7,8 @@ import kotlin.system.measureTimeMillis
  * Utility for monitoring and reporting performance metrics of Advent of Code solutions.
  */
 object PerformanceMonitor {
-    private val metrics = mutableMapOf<String, MutableList<Long>>()
-    private var enabled = false
+    internal val metrics = mutableMapOf<String, MutableList<Long>>()
+    internal var enabled = false
 
     /**
      * Enable performance monitoring.
@@ -37,7 +37,7 @@ object PerformanceMonitor {
      * @param block Code block to measure
      * @return Result of the block execution
      */
-    inline fun <T> measure(
+    fun <T> measure(
         key: String,
         block: () -> T,
     ): T {

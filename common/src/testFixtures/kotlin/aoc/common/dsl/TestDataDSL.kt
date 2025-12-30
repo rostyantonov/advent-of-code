@@ -1,11 +1,6 @@
 package aoc.common.dsl
 
 /**
- * DSL for building test data in a more readable way.
- * Provides convenient builders for common Advent of Code test patterns.
- */
-
-/**
  * Test case builder for single result tests.
  */
 class TestCaseBuilder<T> {
@@ -99,14 +94,6 @@ class TestSuiteBuilder<T> {
 
 /**
  * DSL function to create a test suite.
- */
-fun <T> testSuite(init: TestSuiteBuilder<T>.() -> Unit): List<TestCase<T>> {
-    val builder = TestSuiteBuilder<T>()
-    builder.init()
-    return builder.build()
-}
-
-/**
  * Example usage:
  * ```
  * val tests = testSuite<Int> {
@@ -122,3 +109,8 @@ fun <T> testSuite(init: TestSuiteBuilder<T>.() -> Unit): List<TestCase<T>> {
  * }
  * ```
  */
+fun <T> testSuite(init: TestSuiteBuilder<T>.() -> Unit): List<TestCase<T>> {
+    val builder = TestSuiteBuilder<T>()
+    builder.init()
+    return builder.build()
+}
