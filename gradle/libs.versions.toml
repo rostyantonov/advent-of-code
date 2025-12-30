@@ -2,11 +2,13 @@
 kotlin = "2.3.10"
 junit = "6.0.2"
 ktlint = "1.8.0"
+gson = "2.13.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
