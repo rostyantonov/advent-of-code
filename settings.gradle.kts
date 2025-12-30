@@ -5,3 +5,4 @@ rootProject.name = "advent-of-code"
 
 include("main")
 include("common")
+include("advent-2015")
