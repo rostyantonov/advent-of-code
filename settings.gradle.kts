@@ -6,3 +6,4 @@ rootProject.name = "advent-of-code"
 include("main")
 include("ksp-processor")
 include("common")
+include("advent-2015")
