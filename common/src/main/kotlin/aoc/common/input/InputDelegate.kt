@@ -3,8 +3,7 @@ package aoc.common.input
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-class InputDelegate<InputFuncResult : Any, Result : Any> :
-    ReadWriteProperty<AoCFileInput<InputFuncResult, Result>, InputFuncResult> {
+class InputDelegate<InputFuncResult : Any, Result : Any> : ReadWriteProperty<AoCFileInput<InputFuncResult, Result>, InputFuncResult> {
     private lateinit var value: InputFuncResult
 
     override fun getValue(
