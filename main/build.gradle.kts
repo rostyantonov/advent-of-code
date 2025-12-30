@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     implementation(libs.gson)
+    implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.suite)
