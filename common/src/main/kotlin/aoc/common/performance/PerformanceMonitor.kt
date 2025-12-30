@@ -1,13 +1,16 @@
 package aoc.common.performance
 
-import aoc.common.util.formatted
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.measureTimeMillis
 
 /**
  * Utility for monitoring and reporting performance metrics of Advent of Code solutions.
+ * Thread-safe for use in concurrent environments.
  */
 object PerformanceMonitor {
-    internal val metrics = mutableMapOf<String, MutableList<Long>>()
+    internal val metrics = ConcurrentHashMap<String, MutableList<Long>>()
+
+    @Volatile
     internal var enabled = false
 
     /**
@@ -49,7 +52,11 @@ object PerformanceMonitor {
                 result = block()
             }
 
-        metrics.getOrPut(key) { mutableListOf() }.add(time)
+        metrics.getOrPut(key) { mutableListOf() }.apply {
+            synchronized(this) {
+                add(time)
+            }
+        }
         return result
     }
 

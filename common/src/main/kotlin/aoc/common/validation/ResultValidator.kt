@@ -92,10 +92,10 @@ object ResultValidator {
         result: Any?,
         validValues: Collection<Any>,
     ): Any {
-        if (result !in validValues) {
+        if (result == null || result !in validValues) {
             throw ValidationException("Result $result is not in valid set: $validValues")
         }
-        return result!!
+        return result
     }
 
     /**
