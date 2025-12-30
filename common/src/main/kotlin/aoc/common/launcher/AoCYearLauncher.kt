@@ -35,6 +35,12 @@ object AoCYearLauncher {
                 daySelected.processPartTwo(),
             )
         } catch (_: ClassNotFoundException) {
+            // Day not implemented yet - this is expected
+        } catch (e: Exception) {
+            println("ERROR: $year/$dayName failed with: ${e.javaClass.simpleName}: ${e.message}")
+            if (System.getProperty("aoc.debug") == "true") {
+                e.printStackTrace()
+            }
         }
     }
 
