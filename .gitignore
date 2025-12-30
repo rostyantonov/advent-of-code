@@ -4,6 +4,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### KSP Generated Sources ###
+**/build/generated/ksp/
+
 ### IntelliJ IDEA ###
 /.idea/
 *.iws
