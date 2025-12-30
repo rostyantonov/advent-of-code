@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.kotlin.reflect)
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlin.test)
