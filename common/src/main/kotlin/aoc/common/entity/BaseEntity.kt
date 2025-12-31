@@ -1,6 +1,7 @@
 package aoc.common.entity
 
 object BaseEntity {
+
     fun getAsInt(
         collection: MatchGroupCollection,
         name: String,
@@ -111,7 +112,7 @@ object BaseEntity {
     fun getAsNullableBoolean(
         collection: MatchGroupCollection,
         name: String,
-    ) = collection[name]?.value?.let { 
+    ) = collection[name]?.value?.let {
         when (it.lowercase()) {
             "true" -> true
             "false" -> false
