@@ -2,6 +2,7 @@
 kotlin = "2.3.10"
 junit = "6.0.2"
 ktlint = "1.8.0"
+detekt = "1.23.8"
 gson = "2.13.2"
 kotlinx-coroutines = "1.10.2"
 
@@ -16,3 +17,4 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "14.0.1" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
