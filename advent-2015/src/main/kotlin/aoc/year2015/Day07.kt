@@ -30,14 +30,16 @@ class Day07 : AoCFileInput<List<WireNode>, Int>() {
      * x AND y -> z means to connect wires x and y to an AND gate, and then connect its output to wire z.
      *
      * For example:
-     *   123 -> x means that the signal 123 is provided to wire x.
-     *   x AND y -> z means that the bitwise AND of wire x and wire y is provided to wire z.
-     *   p LSHIFT 2 -> q means that the value from wire p is left-shifted by 2 and then provided to wire q.
-     *   NOT e -> f means that the bitwise complement of the value from wire e is provided to wire f.
+     *
+     *      123 -> x means that the signal 123 is provided to wire x.
+     *      x AND y -> z means that the bitwise AND of wire x and wire y is provided to wire z.
+     *      p LSHIFT 2 -> q means that the value from wire p is left-shifted by 2 and then provided to wire q.
+     *      NOT e -> f means that the bitwise complement of the value from wire e is provided to wire f.
      *
      * Other possible gates include OR (bitwise OR) and RSHIFT (right-shift).
      *
      * For example, here is a simple circuit:
+     *
      *      123 -> x
      *      456 -> y
      *      x AND y -> d
@@ -47,6 +49,7 @@ class Day07 : AoCFileInput<List<WireNode>, Int>() {
      *      NOT x -> h
      *      NOT y -> i
      * After it is run, these are the signals on the wires:
+     *
      *      d: 72
      *      e: 507
      *      f: 492
