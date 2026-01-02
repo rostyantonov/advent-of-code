@@ -8,6 +8,17 @@ data class Path(
         fun getAllPaths(
             values: List<String>,
             connections: Map<Pair<String, String>, Int>,
+        ): List<Path> = createAllPaths(values, connections, false)
+
+        fun getAllCircularPaths(
+            values: List<String>,
+            connections: Map<Pair<String, String>, Int>,
+        ): List<Path> = createAllPaths(values, connections, true)
+
+        private fun createAllPaths(
+            values: List<String>,
+            connections: Map<Pair<String, String>, Int>,
+            circular: Boolean,
         ): List<Path> {
             // creating list of initial points
             var pointsPaths = values.map { Path(listOf(it), 0) }
@@ -30,7 +41,17 @@ data class Path(
                 }
                 pointsPaths = newPointPaths
             }
-            return pointsPaths
+            // add first point to make a circle
+            return if (circular) {
+                pointsPaths.map { path ->
+                    Path(
+                        path.points + path.points.first(),
+                        path.distance + (connections[Pair(path.points.last(), path.points.first())] ?: 0),
+                    )
+                }
+            } else {
+                pointsPaths
+            }
         }
     }
 }
