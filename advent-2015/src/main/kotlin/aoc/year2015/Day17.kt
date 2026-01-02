@@ -12,6 +12,10 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
     private var shortest by Delegates.notNull<Int>()
     private var count by Delegates.notNull<Int>()
 
+    private companion object {
+        private const val EGGNOG_LITERS = 150
+    }
+
     /**
      * The elves bought too much eggnog again - 150 liters this time.
      * To fit it all into your refrigerator, you'll need to move it into smaller containers.
@@ -28,7 +32,7 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
      * Filling all containers entirely, how many different combinations of
      * containers can exactly fit all 150 liters of eggnog?
      */
-    override fun processPartOne(): Int = checkPartOne(150)
+    override fun processPartOne(): Int = checkPartOne(EGGNOG_LITERS)
     // result 1 304 for part 1
 
     /**
@@ -41,15 +45,16 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
      * In the example above, the minimum number of containers was two.
      * There were three ways to use that many containers, and so the answer there would be 3.
      */
-    override fun processPartTwo(): Int = checkPartTwo(150)
+    override fun processPartTwo(): Int = checkPartTwo(EGGNOG_LITERS)
     // result 18 for part 2
 
     fun checkPartOne(limit: Int): Int {
         this.limit = limit
-        input = input.sorted()
-        shortest = input.size
+        val sortedInput = input.sorted()
+        shortest = sortedInput.size
         count = 0
         iterate(
+            containers = sortedInput,
             start = 0,
             length = 1,
             size = 0,
@@ -60,10 +65,11 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
 
     fun checkPartTwo(limit: Int): Int {
         this.limit = limit
-        input = input.sorted()
-        shortest = input.size
+        val sortedInput = input.sorted()
+        shortest = sortedInput.size
         count = 0
         iterate(
+            containers = sortedInput,
             start = 0,
             length = 1,
             size = 0,
@@ -73,13 +79,14 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
     }
 
     private fun iterate(
+        containers: List<Int>,
         start: Int,
         length: Int,
         size: Int,
         useShortest: Boolean,
     ) {
-        for (i in start..<input.size) {
-            val tmpSize = size + input[i]
+        for (i in start..<containers.size) {
+            val tmpSize = size + containers[i]
             when {
                 useShortest && length > shortest -> {
                     break
@@ -87,9 +94,10 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
                 tmpSize < limit -> {
                     if (!useShortest || length < shortest) {
                         iterate(
+                            containers = containers,
                             start = i + 1,
                             length = length + 1,
-                            size = size + input[i],
+                            size = size + containers[i],
                             useShortest = useShortest,
                         )
                     }
