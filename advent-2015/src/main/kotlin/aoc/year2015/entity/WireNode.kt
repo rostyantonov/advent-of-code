@@ -12,7 +12,7 @@ import aoc.common.entity.GenerateStructure
 
 /**
  * WireNode entity representing a wire connection with bitwise operations.
- * 
+ *
  * Uses KSP with custom BitOperationConverter to automatically generate the companion object.
  * Note: The `value` field is derived in init block from `left` when it contains a numeric value.
  *
@@ -30,6 +30,7 @@ data class WireNode(
 ) {
     val operation: BitOperation = cmd ?: DIRECT
     val value: UShort? = left?.toUShortOrNull()
+
     fun getValue(connectionsMap: MutableMap<String, WireNode>): UShort {
         if (operation == DIRECT && value != null) {
             return value
