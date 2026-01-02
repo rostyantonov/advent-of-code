@@ -10,7 +10,7 @@ import aoc.year2015.entity.Path
 class Day13 : AoCFileInput<List<Attendee>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput<Attendee>(
+            StructuredInput(
                 regex =
                     Regex(
                         "(?<who>\\w+) would (?<state>\\w+) (?<rawAmount>\\d+)" +
