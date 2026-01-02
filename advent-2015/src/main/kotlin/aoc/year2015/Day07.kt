@@ -19,7 +19,8 @@ class Day07 : AoCFileInput<List<WireNode>, Int>() {
 
     /**
      * This year, Santa brought little Bobby Tables a set of wires and bitwise logic gates!
-     * Unfortunately, little Bobby is a little under the recommended age range, and he needs help assembling the circuit.
+     * Unfortunately, little Bobby is a little under the recommended age range, and he needs help assembling the
+     * circuit.
      *
      * Each wire has an identifier (some lowercase letters) and can carry a 16-bit signal (a number from 0 to 65535).
      * A signal is provided to each wire by a gate, another wire, or some specific value.
