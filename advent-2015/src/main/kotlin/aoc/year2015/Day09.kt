@@ -3,8 +3,9 @@ package aoc.year2015
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.common.util.reverse
-import aoc.year2015.entitY.Connection
-import aoc.year2015.entitY.Path
+import aoc.year2015.entity.Connection
+import aoc.year2015.entity.ConnectionCompanion
+import aoc.year2015.entity.Path
 
 // https://en.wikipedia.org/wiki/Travelling_salesman_problem
 class Day09 : AoCFileInput<List<Connection>, Int>() {
@@ -12,7 +13,7 @@ class Day09 : AoCFileInput<List<Connection>, Int>() {
         get() =
             StructuredInput(
                 regex = Regex("(?<from>\\w+) to (?<to>\\w+) = (?<value>\\d+)"),
-                builder = Connection::fromLine,
+                builder = ConnectionCompanion::fromLine,
             )::getStructInput
 
     private val links: List<Path> by lazy {
