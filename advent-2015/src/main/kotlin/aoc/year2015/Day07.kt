@@ -3,6 +3,7 @@ package aoc.year2015
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.year2015.entity.WireNode
+import aoc.year2015.entity.WireNodeCompanion
 
 class Day07 : AoCFileInput<List<WireNode>, Int>() {
     override val inputFunction
@@ -11,7 +12,7 @@ class Day07 : AoCFileInput<List<WireNode>, Int>() {
                 Regex(
                     "(?<left>[\\da-z]+)? *(?<cmd>NOT|AND|OR|LSHIFT|RSHIFT)? *(?<right>[\\da-z]+)? -> (?<name>[a-z]+)",
                 ),
-            builder = WireNode::fromLine,
+            builder = WireNodeCompanion::fromLine,
         )::getStructInput
 
     private lateinit var connectionsMap: MutableMap<String, WireNode>
@@ -74,7 +75,7 @@ class Day07 : AoCFileInput<List<WireNode>, Int>() {
         // 3 176 was result for "a"
 
         loadConnectionsMap()
-        connectionsMap["b"] = WireNode(name = "b", value = aResult)
+        connectionsMap["b"] = WireNode(name = "b", left = aResult.toString())
         return getCalculated("a").toInt()
     }
     // result 14 710 for part 2

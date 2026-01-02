@@ -7,29 +7,29 @@ import aoc.common.entity.BitOperation.LSHIFT
 import aoc.common.entity.BitOperation.NOT
 import aoc.common.entity.BitOperation.OR
 import aoc.common.entity.BitOperation.RSHIFT
-import aoc.common.entity.BaseEntity
-import aoc.common.entity.IStructure
-import aoc.common.util.valueOrElse
+import aoc.common.entity.FieldConverter
+import aoc.common.entity.GenerateStructure
 
 /**
  * WireNode entity representing a wire connection with bitwise operations.
  * 
- * Note: This entity uses manual IStructure implementation instead of KSP because:
- * - The `value` field needs to be derived from the `left` regex group when it contains a numeric value
- * - The same `left` group can be either a wire name (String) or a numeric value (UShort)
- * - This dual interpretation of a single regex group is not easily handled by KSP's automatic generation
+ * Uses KSP with custom BitOperationConverter to automatically generate the companion object.
+ * Note: The `value` field is derived in init block from `left` when it contains a numeric value.
  *
  * Example inputs:
- * - "123 -> x" (DIRECT assignment): left=123, operation=DIRECT, value=123
- * - "x AND y -> z" (AND operation): left=x, operation=AND, right=y, value=null
+ * - "123 -> x" (DIRECT assignment): left=123, cmd=null -> value=123
+ * - "x AND y -> z" (AND operation): left=x, cmd=AND, right=y -> value=null
  */
+@GenerateStructure
 data class WireNode(
     val name: String,
     val left: String? = null,
-    val operation: BitOperation = DIRECT,
+    @FieldConverter(BitOperationConverter::class)
+    val cmd: BitOperation? = null,
     val right: String? = null,
-    val value: UShort? = null,
 ) {
+    val operation: BitOperation = cmd ?: DIRECT
+    val value: UShort? = left?.toUShortOrNull()
     fun getValue(connectionsMap: MutableMap<String, WireNode>): UShort {
         if (operation == DIRECT && value != null) {
             return value
@@ -68,18 +68,7 @@ data class WireNode(
                     connectionsMap[left]!!.getValue(connectionsMap)
                 }
             }
-        connectionsMap[name] = WireNode(name, value = value)
+        connectionsMap[name] = WireNode(name = name, left = value.toString())
         return value
-    }
-
-    companion object : IStructure<WireNode> {
-        override fun create(collection: MatchGroupCollection): WireNode =
-            WireNode(
-                name = BaseEntity.getAsString(collection, "name"),
-                left = BaseEntity.getAsNullableString(collection, "left"),
-                operation = valueOrElse<BitOperation>(BaseEntity.getAsNullableString(collection, "cmd"), DIRECT),
-                right = BaseEntity.getAsNullableString(collection, "right"),
-                value = BaseEntity.getAsNullableUShort(collection, "left"),
-            )
     }
 }
