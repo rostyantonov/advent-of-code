@@ -4,18 +4,19 @@ import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.common.util.reverse
 import aoc.year2015.entity.Attendee
+import aoc.year2015.entity.AttendeeCompanion
 import aoc.year2015.entity.Path
 
 class Day13 : AoCFileInput<List<Attendee>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
+            StructuredInput<Attendee>(
                 regex =
                     Regex(
-                        "(?<who>\\w+) would (?<state>\\w+) (?<amount>\\d+)" +
+                        "(?<who>\\w+) would (?<state>\\w+) (?<rawAmount>\\d+)" +
                             " happiness units by sitting next to (?<to>\\w+)\\.",
                     ),
-                builder = Attendee::fromLine,
+                builder = AttendeeCompanion::fromLine,
             )::getStructInput
 
     private lateinit var updatedInput: List<Attendee>
@@ -100,7 +101,7 @@ class Day13 : AoCFileInput<List<Attendee>, Int>() {
      * What is the total change in happiness for the optimal seating arrangement that actually includes yourself?
      */
     override fun processPartTwo(): Int {
-        updatedInput = input + Attendee(Pair("MySelf", "MySelf"), 0)
+        updatedInput = input + Attendee("MySelf", "MySelf", "gain", 0)
         return links.maxBy { it.distance }.distance
     }
     // result 668 for part 2

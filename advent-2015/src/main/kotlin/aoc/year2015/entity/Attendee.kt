@@ -1,27 +1,22 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.BaseEntity.getAsInt
-import aoc.common.entity.BaseEntity.getAsString
-import aoc.common.entity.IStructure
+import aoc.common.entity.GenerateStructure
 import aoc.common.util.safeValue
 
+@GenerateStructure
 data class Attendee(
-    val whoTo: Pair<String, String>,
-    val amount: Int,
+    val who: String,
+    val to: String,
+    val state: String,
+    val rawAmount: Int,
 ) {
-    companion object : IStructure<Attendee> {
-        override fun create(collection: MatchGroupCollection): Attendee =
-            Attendee(
-                whoTo =
-                    Pair(
-                        getAsString(collection, "who"),
-                        getAsString(collection, "to"),
-                    ),
-                amount =
-                    when (safeValue<GainLose>(getAsString(collection, "state"))) {
-                        GainLose.GAIN -> getAsInt(collection, "amount")
-                        GainLose.LOSE -> 0 - getAsInt(collection, "amount")
-                    },
-            )
-    }
+    val whoTo: Pair<String, String>
+        get() = Pair(who, to)
+
+    val amount: Int
+        get() =
+            when (safeValue<GainLose>(state)) {
+                GainLose.GAIN -> rawAmount
+                GainLose.LOSE -> -rawAmount
+            }
 }
