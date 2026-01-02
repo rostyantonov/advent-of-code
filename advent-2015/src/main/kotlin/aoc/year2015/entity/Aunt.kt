@@ -1,23 +1,22 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.BaseEntity.getAsInt
-import aoc.common.entity.BaseEntity.getAsString
-import aoc.common.entity.IStructure
+import aoc.common.entity.GenerateStructure
 
+@GenerateStructure
 data class Aunt(
     val index: Int,
-    val param: Map<String, Int>,
+    val param1name: String,
+    val param1val: Int,
+    val param2name: String,
+    val param2val: Int,
+    val param3name: String,
+    val param3val: Int,
 ) {
-    companion object : IStructure<Aunt> {
-        override fun create(collection: MatchGroupCollection): Aunt =
-            Aunt(
-                index = getAsInt(collection, "index"),
-                param =
-                    mutableMapOf(
-                        Pair(getAsString(collection, "param1name"), getAsInt(collection, "param1val")),
-                        Pair(getAsString(collection, "param2name"), getAsInt(collection, "param2val")),
-                        Pair(getAsString(collection, "param3name"), getAsInt(collection, "param3val")),
-                    ),
+    val param: Map<String, Int>
+        get() =
+            mapOf(
+                param1name to param1val,
+                param2name to param2val,
+                param3name to param3val,
             )
-    }
 }

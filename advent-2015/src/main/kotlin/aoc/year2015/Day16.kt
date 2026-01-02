@@ -3,6 +3,7 @@ package aoc.year2015
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.year2015.entity.Aunt
+import aoc.year2015.entity.AuntCompanion
 
 class Day16 : AoCFileInput<List<Aunt>, Int>() {
     override val inputFunction
@@ -15,7 +16,7 @@ class Day16 : AoCFileInput<List<Aunt>, Int>() {
                             "(?<param2name>\\w+): (?<param2val>\\d+), " +
                             "(?<param3name>\\w+): (?<param3val>\\d+)",
                     ),
-                builder = Aunt::fromLine,
+                builder = AuntCompanion::fromLine,
             )::getStructInput
 
     private val matchingAunt =
