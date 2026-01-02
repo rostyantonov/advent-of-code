@@ -1,7 +1,6 @@
 package aoc.common.entity
 
 object BaseEntity {
-
     fun getAsInt(
         collection: MatchGroupCollection,
         name: String,
