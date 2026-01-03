@@ -7,18 +7,18 @@ class PositionTest {
     @Test
     fun `test position creation`() {
         val pos = Position(5, 10)
-        assertEquals(5, pos.xPos)
-        assertEquals(10, pos.yPos)
+        assertEquals(5, pos.row)
+        assertEquals(10, pos.col)
     }
 
     @Test
     fun `test position movement methods`() {
         val origin = Position(0, 0)
 
-        assertEquals(Position(0, -1), origin.getUp())
-        assertEquals(Position(0, 1), origin.getDown())
-        assertEquals(Position(-1, 0), origin.getLeft())
-        assertEquals(Position(1, 0), origin.getRight())
+        assertEquals(Position( -1, 0), origin.getUp())
+        assertEquals(Position( 1, 0), origin.getDown())
+        assertEquals(Position(0, -1), origin.getLeft())
+        assertEquals(Position(0, 1), origin.getRight())
     }
 
     @Test
@@ -26,8 +26,8 @@ class PositionTest {
         val origin = Position(0, 0)
 
         assertEquals(Position(-1, -1), origin.getUpLeft())
-        assertEquals(Position(1, -1), origin.getUpRight())
-        assertEquals(Position(-1, 1), origin.getDownLeft())
+        assertEquals(Position(-1, 1), origin.getUpRight())
+        assertEquals(Position(1, -1), origin.getDownLeft())
         assertEquals(Position(1, 1), origin.getDownRight())
     }
 

@@ -3,37 +3,37 @@ package aoc.common.entity
 import kotlin.math.abs
 
 data class Position(
-    val xPos: Int,
-    val yPos: Int,
+    val row: Int,
+    val col: Int,
 ) {
     private val up: Int
-        get() = yPos - 1
+        get() = row - 1
     private val down: Int
-        get() = yPos + 1
+        get() = row + 1
     private val left: Int
-        get() = xPos - 1
+        get() = col - 1
     private val right: Int
-        get() = xPos + 1
+        get() = col + 1
 
-    operator fun minus(other: Position): Position = Position(this.xPos - other.xPos, this.yPos - other.yPos)
+    operator fun minus(other: Position): Position = Position(this.row - other.row, this.col - other.col )
 
-    operator fun plus(other: Position): Position = Position(this.xPos + other.xPos, this.yPos + other.yPos)
+    operator fun plus(other: Position): Position = Position(this.row + other.row, this.col + other.col)
 
-    fun getUp() = Position(xPos, up)
+    fun getUp() = Position(up, col)
 
-    fun getDown() = Position(xPos, down)
+    fun getDown() = Position(down, col)
 
-    fun getLeft() = Position(left, yPos)
+    fun getLeft() = Position(row, left )
 
-    fun getRight() = Position(right, yPos)
+    fun getRight() = Position(row, right)
 
-    fun getUpLeft() = Position(left, up)
+    fun getUpLeft() = Position(up, left)
 
-    fun getUpRight() = Position(right, up)
+    fun getUpRight() = Position(up, right)
 
-    fun getDownLeft() = Position(left, down)
+    fun getDownLeft() = Position(down,left )
 
-    fun getDownRight() = Position(right, down)
+    fun getDownRight() = Position(down, right )
 
     /**
      * Calculates Manhattan distance between this position and another position.
@@ -41,7 +41,7 @@ data class Position(
      * @param other The target position
      * @return The Manhattan distance as an integer
      */
-    fun manhattanDistance(other: Position): Int = abs(xPos - other.xPos) + abs(yPos - other.yPos)
+    fun manhattanDistance(other: Position): Int = abs(row - other.row) + abs(col - other.col)
 
     /**
      * Returns a list of all 4 adjacent positions (up, down, left, right).
