@@ -116,7 +116,7 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
         repeat(steps) {
             myInput.gridData.forEachIndexed { row, rowData ->
                 rowData.forEachIndexed { col, char ->
-                    newInput.gridData[col, row] = nextState(char, col, row)
+                    newInput.gridData[row, col] = nextState(char, row, col)
                 }
             }
             val tmp = myInput
@@ -126,10 +126,10 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
         return myInput.gridData.sumOf { row -> row.count { it == LIGHT_ON || it == LIGHT_STAR } }
     }
 
-    private fun nextState(current: Char, col: Int, row: Int): Char {
+    private fun nextState(current: Char, row: Int, col: Int): Char {
         if (current == LIGHT_STAR) return LIGHT_STAR
         
-        val neighborCount = myInput.getNeighbours(col, row).count { it == LIGHT_ON || it == LIGHT_STAR }
+        val neighborCount = myInput.getNeighbours(row, col ).count { it == LIGHT_ON || it == LIGHT_STAR }
         return when (current) {
             LIGHT_ON -> if (neighborCount == 2 || neighborCount == 3) LIGHT_ON else LIGHT_OFF
             else -> if (neighborCount == 3) LIGHT_ON else LIGHT_OFF
