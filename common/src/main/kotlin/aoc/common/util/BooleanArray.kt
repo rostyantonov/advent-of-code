@@ -1,37 +1,37 @@
 package aoc.common.util
 
 operator fun Array<BooleanArray>.set(
-    xPos: Int,
-    yPos: Int,
+    row: Int,
+    col: Int,
     value: Boolean,
 ) {
-    this[yPos][xPos] = value
+    this[row][col] = value
 }
 
 operator fun Array<BooleanArray>.get(
-    xPos: Int,
-    yPos: Int,
-): Boolean = this[yPos][xPos]
+    row: Int,
+    col: Int,
+): Boolean = this[row][col]
 
 operator fun Array<BooleanArray>.set(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
     value: Boolean,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos] = value
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col] = value
         }
     }
 }
 
 fun Array<BooleanArray>.invert(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos] = !this[xPos, yPos]
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col] = !this[row, col]
         }
     }
 }

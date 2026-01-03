@@ -1,72 +1,72 @@
 package aoc.common.util
 
 operator fun Array<IntArray>.set(
-    xPos: Int,
-    yPos: Int,
+    row: Int,
+    col: Int,
     value: Int,
 ) {
-    this[yPos][xPos] = value
+    this[row][col] = value
 }
 
 operator fun Array<IntArray>.get(
-    xPos: Int,
-    yPos: Int,
-): Int = this[yPos][xPos]
+    row: Int,
+    col: Int,
+): Int = this[row][col]
 
 operator fun Array<IntArray>.set(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
     value: Int,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos] = value
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col] = value
         }
     }
 }
 
 fun Array<IntArray>.increase(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos]++
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col]++
         }
     }
 }
 
 fun Array<IntArray>.increaseBy(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
     value: Int,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos] += value
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col] += value
         }
     }
 }
 
 fun Array<IntArray>.decrease(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            this[xPos, yPos]--
+    for (row in rowRange) {
+        for (col in colRange) {
+            this[row, col]--
         }
     }
 }
 
 fun Array<IntArray>.decreaseToZero(
-    xRange: IntRange,
-    yRange: IntRange,
+    rowRange: IntRange,
+    colRange: IntRange,
 ) {
-    for (xPos in xRange) {
-        for (yPos in yRange) {
-            if (this[xPos, yPos] > 0) {
-                this[xPos, yPos]--
+    for (row in rowRange) {
+        for (col in colRange) {
+            if (this[row, col] > 0) {
+                this[row, col]--
             }
         }
     }
