@@ -2,6 +2,7 @@ package aoc.year2015
 
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StringInput
+import aoc.year2015.entity.BossPlayer
 import aoc.year2015.entity.BossPlayer.Companion.getPlayerFromLines
 import aoc.year2015.entity.ItemSet
 import aoc.year2015.entity.Shop.Armor
@@ -10,6 +11,10 @@ import aoc.year2015.entity.Shop.Weapons
 import aoc.year2015.entity.WarriorPlayer
 
 class Day21 : AoCFileInput<List<String>, Int>() {
+
+    companion object {
+        private const val PLAYER_STARTING_HEALTH = 100
+    }
     override val inputFunction
         get() = StringInput::asIs
 
@@ -97,21 +102,17 @@ class Day21 : AoCFileInput<List<String>, Int>() {
                         if (leftRing != rightRing) {
                             player.itemSet =
                                 ItemSet(weapon = weapon, armor = armor, leftRing = leftRing, rightRing = rightRing)
-                            while (player.health > 0 && boss.health > 0) {
-                                player.attack(boss)
-
-                                if (boss.health <= 0) {
-                                    if (cheapest && player.itemSet!!.price < price) {
-                                        price = player.itemSet!!.price
-                                    }
-                                    break
+                            
+                            val playerWon = simulateCombat(player, boss)
+                            
+                            player.itemSet?.let { set ->
+                                if (playerWon && cheapest && set.price < price) {
+                                    price = set.price
+                                } else if (!playerWon && !cheapest && set.price > price) {
+                                    price = set.price
                                 }
-
-                                boss.attack(player)
                             }
-                            if (player.health <= 0 && !cheapest && player.itemSet!!.price > price) {
-                                price = player.itemSet!!.price
-                            }
+                            
                             player.resetHealth()
                             boss.resetHealth()
                         }
@@ -120,5 +121,14 @@ class Day21 : AoCFileInput<List<String>, Int>() {
             }
         }
         return price
+    }
+
+    private fun simulateCombat(player: WarriorPlayer, boss: BossPlayer): Boolean {
+        while (player.health > 0 && boss.health > 0) {
+            player.attack(boss)
+            if (boss.health <= 0) return true
+            boss.attack(player)
+        }
+        return false
     }
 }
