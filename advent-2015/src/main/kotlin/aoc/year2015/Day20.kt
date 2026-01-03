@@ -9,6 +9,10 @@ class Day20 : AoCFileInput<Int, Int>() {
     override val inputFunction
         get() = IntInput::getFirstInt
 
+    companion object {
+        private const val MAX_HOUSES_PER_ELF_PART2 = 50
+    }
+
     /**
      * To keep the Elves busy, Santa has them deliver some presents by hand, door-to-door.
      * He sends them down a street with infinite houses numbered sequentially: 1, 2, 3, 4, 5, and so on.
@@ -39,15 +43,15 @@ class Day20 : AoCFileInput<Int, Int>() {
      *
      * What is the lowest house number of the house to get at least as many presents as the number in your puzzle input?.
      */
-    override fun processPartOne(): Int = findLowestPresentsPossible(10, input)
+    override fun processPartOne(): Int = findLowestPresentsPossible(10)
     // result 831 600 for part 1
 
-    override fun processPartTwo(): Int = findLowestPresentsPossible(11, 50)
-    // result 9 962 624 for part 2
+    override fun processPartTwo(): Int = findLowestPresentsPossible(11, MAX_HOUSES_PER_ELF_PART2)
+    // result 884 520 for part 2
 
     private fun findLowestPresentsPossible(
         elfMultiple: Int,
-        maxHousesPerElf: Int,
+        maxHousesPerElf: Int = Int.MAX_VALUE,
     ): Int {
         val maxHouses = input / elfMultiple
 
@@ -70,6 +74,6 @@ class Day20 : AoCFileInput<Int, Int>() {
                 return index + 1
             }
         }
-        throw Exception("Something went wrong -> didn't found matching house")
+        throw Exception("No house found with at least $input presents (searched up to house $maxHouses)")
     }
 }
