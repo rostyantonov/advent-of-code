@@ -10,4 +10,10 @@ class StructuredInput<Structure>(
         blockInput.map { string ->
             builder(string, regex)
         }
+
+    fun getSingleStructInput(blockInput: List<String>): Structure =
+        blockInput
+            .map { string ->
+                builder(string, regex)
+            }.first()
 }
