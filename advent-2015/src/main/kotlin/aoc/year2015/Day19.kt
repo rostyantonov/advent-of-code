@@ -4,6 +4,7 @@ import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.common.input.StructuredPairInput
 import aoc.year2015.entity.Molecule
+import aoc.year2015.entity.MoleculeCompanion
 import aoc.year2015.entity.Replacement
 import aoc.year2015.entity.ReplacementCompanion
 
@@ -26,7 +27,7 @@ class Day19 : AoCFileInput<Pair<List<Replacement>, Molecule>, Int>() {
         get() =
             StructuredInput(
                 regex = Regex("[A-Z][a-df-z]|[A-Z]|e"),
-                builder = Molecule::fromLine,
+                builder = MoleculeCompanion::fromLine,
             )::getSingleStructInput
 
     /**

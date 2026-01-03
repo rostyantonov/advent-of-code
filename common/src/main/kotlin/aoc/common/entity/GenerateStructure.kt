@@ -3,37 +3,35 @@ package aoc.common.entity
 /**
  * Annotation to mark data classes that should have their IStructure companion object generated.
  *
- * The KSP processor will generate a companion object implementing IStructure<T> that:
- * - Extracts field values from regex named groups matching the field names
+ * The KSP processor will generate a companion object implementing IStructure<T> or IStructureCustomLine<T> that:
+ * - Extracts field values from regex named groups matching the field names (when customLine=false)
+ * - Processes the entire line and match sequence (when customLine=true)
  * - Supports Int, Long, String, Char, UShort (and nullable variants)
  *
- * Example:
+ * @param customLine If true, generates IStructureCustomLine<T> with create(line, collection: Sequence<MatchResult>)
+ *                   If false (default), generates IStructure<T> with create(collection: MatchGroupCollection)
+ *
+ * Example (standard):
  * ```
  * @GenerateStructure
  * data class Present(
  *     val length: Int,
  *     val width: Int,
  *     val height: Int,
- * ) {
- *     companion object
- * }
+ * )
  * ```
  *
- * This will generate:
+ * Example (custom line):
  * ```
- * object PresentCompanion : IStructure<Present> {
- *     override fun create(collection: MatchGroupCollection): Present =
- *         Present(
- *             length = BaseEntity.getAsInt(collection, "length"),
- *             width = BaseEntity.getAsInt(collection, "width"),
- *             height = BaseEntity.getAsInt(collection, "height"),
- *         )
- * }
- *
- * fun Present.Companion.fromRegex(line: String, regex: Regex): Present =
- *     PresentCompanion.fromLine(line, regex)
+ * @GenerateStructure(customLine = true)
+ * data class Molecule(
+ *     val stringValue: String,
+ *     val atoms: List<Atom>,
+ * )
  * ```
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class GenerateStructure
+annotation class GenerateStructure(
+    val customLine: Boolean = false,
+)
