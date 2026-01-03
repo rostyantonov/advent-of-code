@@ -15,8 +15,8 @@ class PositionTest {
     fun `test position movement methods`() {
         val origin = Position(0, 0)
 
-        assertEquals(Position( -1, 0), origin.getUp())
-        assertEquals(Position( 1, 0), origin.getDown())
+        assertEquals(Position(-1, 0), origin.getUp())
+        assertEquals(Position(1, 0), origin.getDown())
         assertEquals(Position(0, -1), origin.getLeft())
         assertEquals(Position(0, 1), origin.getRight())
     }
