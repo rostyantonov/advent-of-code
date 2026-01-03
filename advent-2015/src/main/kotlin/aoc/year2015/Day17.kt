@@ -91,6 +91,7 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
                 useShortest && length > shortest -> {
                     break
                 }
+
                 tmpSize < limit -> {
                     if (!useShortest || length < shortest) {
                         iterate(
@@ -111,7 +112,10 @@ class Day17 : AoCFileInput<List<Int>, Int>() {
                         count = 1
                     }
                 }
-                tmpSize > limit -> break
+
+                tmpSize > limit -> {
+                    break
+                }
             }
         }
     }
