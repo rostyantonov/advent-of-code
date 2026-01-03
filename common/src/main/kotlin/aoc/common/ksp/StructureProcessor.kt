@@ -66,7 +66,8 @@ class StructureProcessor(
                     it.shortName.asString() == "GenerateStructure"
                 }
             val isCustomLine =
-                generateAnnotation?.arguments
+                generateAnnotation
+                    ?.arguments
                     ?.find { it.name?.asString() == "customLine" }
                     ?.value as? Boolean ?: false
 
@@ -209,12 +210,18 @@ class StructureProcessor(
                     typeString == "String" && name == "stringValue" -> {
                         "            $name = line"
                     }
+
                     typeString == "List" -> {
                         // For List types, we convert the collection
-                        val typeArg = type.arguments.firstOrNull()?.type?.resolve()
+                        val typeArg =
+                            type.arguments
+                                .firstOrNull()
+                                ?.type
+                                ?.resolve()
                         val innerType = typeArg?.declaration?.simpleName?.asString() ?: "Unknown"
                         "            $name = collection.toList().map { $innerType(it.value) }"
                     }
+
                     else -> {
                         logger.warn("Custom line parameter '$name' of type '$typeString' may need manual mapping", param)
                         "            $name = TODO(\"Map $name from line or collection\")"
