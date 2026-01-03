@@ -61,9 +61,9 @@ class Day06 : AoCFileInput<List<Instruction>, Int>() {
 
         input.forEach { instruction ->
             when (instruction.command) {
-                TURN_ON -> lampsState[instruction.xRange, instruction.yRange] = true
-                TURN_OFF -> lampsState[instruction.xRange, instruction.yRange] = false
-                TOGGLE -> lampsState.invert(instruction.xRange, instruction.yRange)
+                TURN_ON -> lampsState[instruction.rowRange, instruction.colRange] = true
+                TURN_OFF -> lampsState[instruction.rowRange, instruction.colRange] = false
+                TOGGLE -> lampsState.invert(instruction.rowRange, instruction.colRange)
             }
         }
         val result =
@@ -103,9 +103,9 @@ class Day06 : AoCFileInput<List<Instruction>, Int>() {
 
         input.forEach { instruction ->
             when (instruction.command) {
-                TURN_ON -> lampsBrightness.increase(instruction.xRange, instruction.yRange)
-                TURN_OFF -> lampsBrightness.decreaseToZero(instruction.xRange, instruction.yRange)
-                TOGGLE -> lampsBrightness.increaseBy(instruction.xRange, instruction.yRange, 2)
+                TURN_ON -> lampsBrightness.increase(instruction.rowRange, instruction.colRange)
+                TURN_OFF -> lampsBrightness.decreaseToZero(instruction.rowRange, instruction.colRange)
+                TOGGLE -> lampsBrightness.increaseBy(instruction.rowRange, instruction.colRange, 2)
             }
         }
         val result =

@@ -14,6 +14,6 @@ data class Instruction(
     val end: Position,
 ) {
     val command: Command = safeValue(cmd)
-    val xRange = start.xPos..end.xPos
-    val yRange = start.yPos..end.yPos
+    val rowRange = start.row..end.row
+    val colRange = start.col..end.col
 }
