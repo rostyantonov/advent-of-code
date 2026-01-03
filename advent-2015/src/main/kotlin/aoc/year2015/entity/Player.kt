@@ -6,6 +6,7 @@ sealed interface Player {
     var damage: Int
     var armor: Int
     var mana: Int
+    var effects: MutableMap<Spell, Int>
 
     fun resetHealth() {
         health = initHealth
@@ -18,6 +19,41 @@ sealed interface Player {
         }
         opponent.health -= attack
     }
+
+    fun applyEffects() {
+        effects.keys.forEach { spellEffect ->
+            when (spellEffect) {
+                Spell.POISON -> {
+                    health -= 3
+                }
+
+                Spell.SHIELD -> {
+                    armor = 7
+                }
+
+                Spell.RECHARGE -> {
+                    mana += 101
+                }
+
+                Spell.INFINITE_LIFE_DRAIN -> {
+                    health--
+                }
+
+                else -> {}
+            }
+            effects[spellEffect] = effects[spellEffect]!! - 1
+        }
+        effects =
+            effects.filter { (_, length) ->
+                length > 0
+            } as MutableMap<Spell, Int>
+    }
+
+    fun resetShield() {
+        if (!effects.containsKey(Spell.SHIELD)) {
+            armor = 0
+        }
+    }
 }
 
 data class BossPlayer(
@@ -25,6 +61,7 @@ data class BossPlayer(
     override var health: Int = initHealth,
     override var damage: Int = 0,
     override var armor: Int = 0,
+    override var effects: MutableMap<Spell, Int> = mutableMapOf(),
 ) : Player {
     override var mana: Int = 0
 
@@ -58,6 +95,7 @@ data class WarriorPlayer(
     override var armor: Int = 0,
 ) : Player {
     override var mana: Int = 0
+    override var effects: MutableMap<Spell, Int> = mutableMapOf()
 
     var itemSet: ItemSet? = null
         set(value) {
@@ -70,4 +108,62 @@ data class WarriorPlayer(
                 (itemSet?.leftRing?.armor ?: 0) +
                 (itemSet?.rightRing?.armor ?: 0)
         }
+}
+
+data class WizardPlayer(
+    override var initHealth: Int = 50,
+    override var health: Int = initHealth,
+    override var armor: Int = 0,
+    override var mana: Int = 500,
+    override var effects: MutableMap<Spell, Int> = mutableMapOf(),
+) : Player {
+    override var damage: Int = 0
+
+    fun canCast(
+        spell: Spell,
+        otherPlayer: Player,
+    ): Boolean {
+        if (spell.cost > mana) {
+            return false
+        }
+        return when (spell) {
+            Spell.DRAIN, Spell.MAGIC_MISSILE -> true
+            Spell.POISON -> !otherPlayer.effects.containsKey(spell)
+            Spell.SHIELD, Spell.RECHARGE -> !effects.containsKey(spell)
+            Spell.INFINITE_LIFE_DRAIN -> false // can't cast it
+        }
+    }
+
+    fun cast(
+        spell: Spell,
+        otherPlayer: Player,
+    ) {
+        mana -= spell.cost
+        when (spell) {
+            Spell.DRAIN -> {
+                otherPlayer.health -= 2
+                health += 2
+            }
+
+            Spell.MAGIC_MISSILE -> {
+                otherPlayer.health -= 4
+            }
+
+            Spell.POISON -> {
+                otherPlayer.effects[spell] = 6
+            }
+
+            Spell.SHIELD -> {
+                effects[spell] = 6
+            }
+
+            Spell.RECHARGE -> {
+                effects[spell] = 5
+            }
+
+            Spell.INFINITE_LIFE_DRAIN -> {
+                effects[spell] = Int.MAX_VALUE
+            }
+        }
+    }
 }
