@@ -5,6 +5,7 @@ import aoc.common.input.StructuredInput
 import aoc.common.input.StructuredPairInput
 import aoc.year2015.entity.Molecule
 import aoc.year2015.entity.Replacement
+import aoc.year2015.entity.ReplacementCompanion
 
 class Day19 : AoCFileInput<Pair<List<Replacement>, Molecule>, Int>() {
     override val inputFunction
@@ -18,7 +19,7 @@ class Day19 : AoCFileInput<Pair<List<Replacement>, Molecule>, Int>() {
         get() =
             StructuredInput(
                 regex = Regex("(?<what>\\w+) => (?<replace>\\w+)"),
-                builder = Replacement::fromLine,
+                builder = ReplacementCompanion::fromLine,
             )::getStructInput
 
     private val secondFunction
