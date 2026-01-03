@@ -30,7 +30,7 @@ object PositionConverter : TypeConverter<Position> {
         fieldName: String,
     ): Position {
         val value = BaseEntity.getAsString(collection, fieldName)
-        val (x, y) = value.split(",").map { it.toInt() }
-        return Position(x, y)
+        val (row, col) = value.split(",").map { it.toInt() }
+        return Position(row, col)
     }
 }
