@@ -126,10 +126,14 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
         return myInput.gridData.sumOf { row -> row.count { it == LIGHT_ON || it == LIGHT_STAR } }
     }
 
-    private fun nextState(current: Char, row: Int, col: Int): Char {
+    private fun nextState(
+        current: Char,
+        row: Int,
+        col: Int,
+    ): Char {
         if (current == LIGHT_STAR) return LIGHT_STAR
-        
-        val neighborCount = myInput.getNeighbours(row, col ).count { it == LIGHT_ON || it == LIGHT_STAR }
+
+        val neighborCount = myInput.getNeighbours(row, col).count { it == LIGHT_ON || it == LIGHT_STAR }
         return when (current) {
             LIGHT_ON -> if (neighborCount == 2 || neighborCount == 3) LIGHT_ON else LIGHT_OFF
             else -> if (neighborCount == 3) LIGHT_ON else LIGHT_OFF
@@ -143,7 +147,7 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
 
         // for always on
         const val LIGHT_STAR = '*'
-        
+
         private const val SIMULATION_STEPS = 100
     }
 }
