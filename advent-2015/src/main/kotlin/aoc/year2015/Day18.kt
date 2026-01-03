@@ -68,7 +68,7 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
      *
      * In your grid of 100x100 lights, given your initial configuration, how many lights are on after 100 steps?
      */
-    override fun processPartOne(): Int = checkPartOne(100)
+    override fun processPartOne(): Int = checkPartOne(SIMULATION_STEPS)
     // result 1 061 for part 1
 
     /**
@@ -91,7 +91,7 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
      * In your grid of 100x100 lights, given your initial configuration, but with the four corners always
      * in the on state, how many lights are on after 100 steps?
      */
-    override fun processPartTwo(): Int = checkPartTwo(100)
+    override fun processPartTwo(): Int = checkPartTwo(SIMULATION_STEPS)
     // result 1 006 for part 2
 
     fun checkPartOne(steps: Int): Int {
@@ -102,11 +102,11 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
     fun checkPartTwo(steps: Int): Int {
         myInput = input.clone()
         with(myInput.gridData) {
-            val xPos = first().size - 1
+            val col = first().size - 1
             first()[0] = LIGHT_STAR
-            first()[xPos] = LIGHT_STAR
+            first()[col] = LIGHT_STAR
             last()[0] = LIGHT_STAR
-            last()[xPos] = LIGHT_STAR
+            last()[col] = LIGHT_STAR
         }
         return iterateSteps(steps)
     }
@@ -114,26 +114,9 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
     private fun iterateSteps(steps: Int): Int {
         var newInput = myInput.clone()
         repeat(steps) {
-            myInput.gridData.forEachIndexed { yPos, row ->
-                row.forEachIndexed { xPos, char ->
-                    if (char == LIGHT_STAR) {
-                        newInput.gridData[xPos, yPos] = LIGHT_STAR
-                    } else {
-                        val count = myInput.getNeighbours(xPos, yPos).count { it == LIGHT_ON || it == LIGHT_STAR }
-                        if (char == LIGHT_ON) {
-                            if (count == 2 || count == 3) {
-                                newInput.gridData[xPos, yPos] = LIGHT_ON
-                            } else {
-                                newInput.gridData[xPos, yPos] = LIGHT_OFF
-                            }
-                        } else {
-                            if (count == 3) {
-                                newInput.gridData[xPos, yPos] = LIGHT_ON
-                            } else {
-                                newInput.gridData[xPos, yPos] = LIGHT_OFF
-                            }
-                        }
-                    }
+            myInput.gridData.forEachIndexed { row, rowData ->
+                rowData.forEachIndexed { col, char ->
+                    newInput.gridData[col, row] = nextState(char, col, row)
                 }
             }
             val tmp = myInput
@@ -143,6 +126,16 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
         return myInput.gridData.sumOf { row -> row.count { it == LIGHT_ON || it == LIGHT_STAR } }
     }
 
+    private fun nextState(current: Char, col: Int, row: Int): Char {
+        if (current == LIGHT_STAR) return LIGHT_STAR
+        
+        val neighborCount = myInput.getNeighbours(col, row).count { it == LIGHT_ON || it == LIGHT_STAR }
+        return when (current) {
+            LIGHT_ON -> if (neighborCount == 2 || neighborCount == 3) LIGHT_ON else LIGHT_OFF
+            else -> if (neighborCount == 3) LIGHT_ON else LIGHT_OFF
+        }
+    }
+
     // A # means "on", and a . means "off".
     companion object {
         const val LIGHT_ON = '#'
@@ -150,5 +143,7 @@ class Day18 : AoCFileInput<GridArray<Char>, Int>() {
 
         // for always on
         const val LIGHT_STAR = '*'
+        
+        private const val SIMULATION_STEPS = 100
     }
 }
