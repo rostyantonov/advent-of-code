@@ -15,7 +15,7 @@ data class Position(
     private val right: Int
         get() = col + 1
 
-    operator fun minus(other: Position): Position = Position(this.row - other.row, this.col - other.col )
+    operator fun minus(other: Position): Position = Position(this.row - other.row, this.col - other.col)
 
     operator fun plus(other: Position): Position = Position(this.row + other.row, this.col + other.col)
 
@@ -23,7 +23,7 @@ data class Position(
 
     fun getDown() = Position(down, col)
 
-    fun getLeft() = Position(row, left )
+    fun getLeft() = Position(row, left)
 
     fun getRight() = Position(row, right)
 
@@ -31,9 +31,9 @@ data class Position(
 
     fun getUpRight() = Position(up, right)
 
-    fun getDownLeft() = Position(down,left )
+    fun getDownLeft() = Position(down, left)
 
-    fun getDownRight() = Position(down, right )
+    fun getDownRight() = Position(down, right)
 
     /**
      * Calculates Manhattan distance between this position and another position.
