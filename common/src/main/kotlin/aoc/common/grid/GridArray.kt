@@ -9,25 +9,25 @@ class GridArray<Type>(
 ) {
     fun getValue(position: Position): Type? =
         try {
-            gridData[position.xPos, position.yPos]
+            gridData[position.row, position.col]
         } catch (_: IndexOutOfBoundsException) {
             null
         }
 
     fun getValue(
-        xPos: Int,
-        yPos: Int,
+        row: Int,
+        col: Int,
     ): Type? =
         try {
-            gridData[xPos, yPos]
+            gridData[row, col]
         } catch (_: IndexOutOfBoundsException) {
             null
         }
 
     fun getNeighbours(
-        xPos: Int,
-        yPos: Int,
-    ) = getNeighbours(Position(xPos, yPos))
+        row: Int,
+        col: Int,
+    ) = getNeighbours(Position(row, col))
 
     private fun getNeighbours(position: Position): List<Type> =
         listOfNotNull(

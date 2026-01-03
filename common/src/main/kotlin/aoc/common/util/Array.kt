@@ -1,26 +1,26 @@
 package aoc.common.util
 
 operator fun <Type> Array<Array<Type>>.set(
-    xPos: Int,
-    yPos: Int,
+    row: Int,
+    col: Int,
     value: Type,
 ) {
-    this[yPos][xPos] = value
+    this[row][col] = value
 }
 
 operator fun <Type> Array<Array<Type>>.get(
-    xPos: Int,
-    yPos: Int,
+    row: Int,
+    col: Int,
 ): Type? =
     try {
-        this[yPos][xPos]
+        this[row][col]
     } catch (_: IndexOutOfBoundsException) {
         null
     }
 
 fun <Type> Array<Array<Type>>.cloneData(): Array<Array<Type>> =
     clone().also {
-        it.forEachIndexed { y, rowData ->
-            it[y] = rowData.clone()
+        it.forEachIndexed { row, rowData ->
+            it[row] = rowData.clone()
         }
     }
