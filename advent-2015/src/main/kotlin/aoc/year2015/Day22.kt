@@ -81,7 +81,6 @@ class Day22 : AoCFileInput<List<String>, Int>() {
         // result 1216 for part 2
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun iterateManaSpent(
         player: WizardPlayer,
         boss: BossPlayer,
@@ -91,9 +90,7 @@ class Day22 : AoCFileInput<List<String>, Int>() {
         boss.applyEffects()
         var manaSpent = spellChain.sumOf { it.cost }
         if (boss.health <= 0) {
-            if (this.manaSpent > manaSpent) {
-                this.manaSpent = manaSpent
-            }
+            this.manaSpent = minOf(this.manaSpent, manaSpent)
             return
         } else if (player.health <= 0) {
             return
@@ -102,9 +99,9 @@ class Day22 : AoCFileInput<List<String>, Int>() {
             if (player.canCast(spell, boss)) {
                 val playerCopy =
                     player.copy(
-                        effects = (player.effects as LinkedHashMap).clone() as MutableMap<Spell, Int>,
+                        effects = player.effects.toMutableMap(),
                     )
-                val bossCopy = boss.copy(effects = (boss.effects as LinkedHashMap).clone() as MutableMap<Spell, Int>)
+                val bossCopy = boss.copy(effects = boss.effects.toMutableMap())
                 playerCopy.cast(spell, bossCopy)
                 spellChain.add(spell)
                 manaSpent = spellChain.sumOf { it.cost }
@@ -112,9 +109,7 @@ class Day22 : AoCFileInput<List<String>, Int>() {
                 playerCopy.applyEffects()
                 bossCopy.applyEffects()
                 if (bossCopy.health <= 0) {
-                    if (this.manaSpent > manaSpent) {
-                        this.manaSpent = manaSpent
-                    }
+                    this.manaSpent = minOf(this.manaSpent, manaSpent)
                 } else {
                     bossCopy.attack(playerCopy)
                     playerCopy.resetShield()

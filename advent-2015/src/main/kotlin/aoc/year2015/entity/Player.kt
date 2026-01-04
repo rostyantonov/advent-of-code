@@ -1,5 +1,8 @@
 package aoc.year2015.entity
 
+const val WIZARD_STARTING_HEALTH = 50
+const val WIZARD_STARTING_MANA = 500
+
 sealed interface Player {
     var initHealth: Int
     var health: Int
@@ -41,7 +44,7 @@ sealed interface Player {
 
                 else -> {}
             }
-            effects[spellEffect] = effects[spellEffect]!! - 1
+            effects[spellEffect] = (effects[spellEffect] ?: 1) - 1
         }
         effects =
             effects.filter { (_, length) ->
@@ -111,10 +114,10 @@ data class WarriorPlayer(
 }
 
 data class WizardPlayer(
-    override var initHealth: Int = 50,
+    override var initHealth: Int = WIZARD_STARTING_HEALTH,
     override var health: Int = initHealth,
     override var armor: Int = 0,
-    override var mana: Int = 500,
+    override var mana: Int = WIZARD_STARTING_MANA,
     override var effects: MutableMap<Spell, Int> = mutableMapOf(),
 ) : Player {
     override var damage: Int = 0
