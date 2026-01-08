@@ -437,7 +437,10 @@ class StructureProcessor(
             |        val discriminator = BaseEntity.getAsString(collection, "$discriminatorField").uppercase()
             |        return when (discriminator) {
             |${generateSealedSubclassCases(sealedSubclasses, className)}
-            |            else -> throw IllegalArgumentException("Unknown discriminator value: ${"$"}discriminator in $className creation")
+            |
+            |            else -> {
+            |                throw IllegalArgumentException("Unknown discriminator value: ${"$"}discriminator in $className creation")
+            |            }
             |        }
             |    }
             |}
@@ -450,7 +453,7 @@ class StructureProcessor(
         subclasses: List<KSClassDeclaration>,
         className: String,
     ): String =
-        subclasses.joinToString("\n") { subclass ->
+        subclasses.joinToString("\n\n") { subclass ->
             val subclassName = subclass.simpleName.asString()
             // Map subclass name to uppercase for discriminator (e.g., Hlf -> HLF, Jmp -> JMP)
             val discriminatorValue = subclassName.uppercase()
@@ -462,7 +465,7 @@ class StructureProcessor(
                 if (parameters.isEmpty()) {
                     ""
                 } else {
-                    "(\n" +
+                    val paramsList =
                         parameters.joinToString(",\n") { param ->
                             val paramName = param.name!!.asString()
                             val paramType = param.type.resolve()
@@ -501,11 +504,11 @@ class StructureProcessor(
                                 }
 
                             "                    $paramName = $getter"
-                        } +
-                        "\n                )"
+                        }
+                    "(\n$paramsList,\n                )"
                 }
 
-            "            \"$discriminatorValue\" -> $className.$subclassName$parameterMappings"
+            "            \"$discriminatorValue\" -> {\n                $className.$subclassName$parameterMappings\n            }"
         }
 }
 
