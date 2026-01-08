@@ -53,8 +53,8 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
     override fun processPartOne(): Int =
         doComputations(
             mutableMapOf(
-                A_REG to 0,
-                B_REG to 0,
+                A_REG to INITIAL_REGISTER_VALUE_PART1,
+                B_REG to INITIAL_REGISTER_VALUE_PART1,
             ),
         )
     // result 255 for part 1
@@ -67,8 +67,8 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
     override fun processPartTwo(): Int =
         doComputations(
             mutableMapOf(
-                A_REG to 1,
-                B_REG to 0,
+                A_REG to INITIAL_REGISTER_VALUE_PART2,
+                B_REG to INITIAL_REGISTER_VALUE_PART1,
             ),
         )
     // result 334 for part 2
@@ -78,21 +78,23 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
         while (position in input.indices) {
             var jump: Int? = null
             when (val ins = input[position]) {
-                is AsmInstruction.Hlf -> registers[ins.register] = registers[ins.register]!! / 2
-                is AsmInstruction.Tpl -> registers[ins.register] = registers[ins.register]!! * 3
-                is AsmInstruction.Inc -> registers[ins.register] = registers[ins.register]!! + 1
+                is AsmInstruction.Hlf -> registers[ins.register] = (registers[ins.register] ?: 0) / 2
+                is AsmInstruction.Tpl -> registers[ins.register] = (registers[ins.register] ?: 0) * 3
+                is AsmInstruction.Inc -> registers[ins.register] = (registers[ins.register] ?: 0) + 1
                 is AsmInstruction.Jmp -> jump = ins.offset
-                is AsmInstruction.Jie -> if (registers[ins.register]!! % 2 == 0) jump = ins.offset
-                is AsmInstruction.Jio -> if (registers[ins.register]!! == 1) jump = ins.offset
+                is AsmInstruction.Jie -> if ((registers[ins.register] ?: 0) % 2 == 0) jump = ins.offset
+                is AsmInstruction.Jio -> if ((registers[ins.register] ?: 0) == 1) jump = ins.offset
                 else -> {} // ignore other commands
             }
             position += jump ?: 1
         } // while (input.size > position)
-        return registers[B_REG]!!
+        return registers[B_REG] ?: 0
     }
 
     companion object {
         const val A_REG = "a"
         const val B_REG = "b"
+        private const val INITIAL_REGISTER_VALUE_PART1 = 0
+        private const val INITIAL_REGISTER_VALUE_PART2 = 1
     }
 }
