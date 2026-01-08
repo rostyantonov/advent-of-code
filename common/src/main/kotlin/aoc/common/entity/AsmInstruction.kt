@@ -1,7 +1,5 @@
 package aoc.common.entity
 
-import aoc.common.util.safeValue
-
 sealed class AsmInstruction {
     data class Hlf(
         val register: String,
@@ -44,36 +42,39 @@ sealed class AsmInstruction {
     ) : AsmInstruction()
 
     companion object : IStructureMulti<AsmInstruction> {
-        override fun create(collection: MatchGroupCollection): AsmInstruction =
-            when (safeValue<AsmCommand>(BaseEntity.getAsString(collection, "cmd"))) {
-                AsmCommand.HLF -> Hlf(BaseEntity.getAsString(collection, "register"))
-                AsmCommand.TPL -> Tpl(BaseEntity.getAsString(collection, "register"))
-                AsmCommand.INC -> Inc(BaseEntity.getAsString(collection, "register"))
-                AsmCommand.DEC -> Dec(BaseEntity.getAsString(collection, "register"))
-                AsmCommand.JMP -> Jmp(BaseEntity.getAsNullableInt(collection, "offset")!!)
-                AsmCommand.JIE ->
+        override fun create(collection: MatchGroupCollection): AsmInstruction {
+            val discriminator = BaseEntity.getAsString(collection, "cmd").uppercase()
+            return when (discriminator) {
+                "HLF" -> Hlf(BaseEntity.getAsString(collection, "register"))
+                "TPL" -> Tpl(BaseEntity.getAsString(collection, "register"))
+                "INC" -> Inc(BaseEntity.getAsString(collection, "register"))
+                "DEC" -> Dec(BaseEntity.getAsString(collection, "register"))
+                "JMP" -> Jmp(BaseEntity.getAsInt(collection, "offset"))
+                "JIE" ->
                     Jie(
                         register = BaseEntity.getAsString(collection, "register"),
                         offset = BaseEntity.getAsInt(collection, "offset"),
                     )
-                AsmCommand.JIO ->
+                "JIO" ->
                     Jio(
                         register = BaseEntity.getAsString(collection, "register"),
                         offset = BaseEntity.getAsInt(collection, "offset"),
                     )
-                AsmCommand.CPY ->
+                "CPY" ->
                     Cpy(
                         value = BaseEntity.getAsString(collection, "value"),
                         register = BaseEntity.getAsString(collection, "register"),
                     )
-                AsmCommand.JNZ ->
+                "JNZ" ->
                     Jnz(
                         value = BaseEntity.getAsString(collection, "value"),
                         offset = BaseEntity.getAsInt(collection, "offset"),
                     )
                 else -> {
-                    throw IllegalArgumentException("Unknown AsmCommand in AsmInstruction creation")
+                    throw IllegalArgumentException("Unknown discriminator value: $discriminator in AsmInstruction creation")
                 }
             }
+        }
     }
 }
+
