@@ -95,6 +95,7 @@ class Day24 : AoCFileInput<List<Int>, Long>() {
     // result 77 387 711 for part 2
 
     private fun findSolution(numOfBags: Int): Long {
+        groupsList.clear()
         groupLimit = input.sum() / numOfBags
         findAllPossibleGroups(groupsList = groupsList)
 
@@ -115,7 +116,6 @@ class Day24 : AoCFileInput<List<Int>, Long>() {
         return result
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun findAllPossibleGroups(
         groupsList: MutableList<LinkedList<Int>>,
         start: Int = 0,
@@ -125,7 +125,7 @@ class Day24 : AoCFileInput<List<Int>, Long>() {
             currentGroup.add(input[index])
             val currentSum = currentGroup.sum()
             if (currentSum == groupLimit) {
-                groupsList.add(currentGroup.clone() as LinkedList<Int>)
+                groupsList.add(LinkedList(currentGroup))
                 currentGroup.removeLast()
                 return
             } else if (currentSum > groupLimit) {
