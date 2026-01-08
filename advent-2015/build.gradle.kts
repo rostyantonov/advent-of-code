@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":ksp-processor"))
     implementation(project(":common"))
     ksp(project(":ksp-processor"))
     testImplementation(testFixtures(project(":common")))
