@@ -4,3 +4,5 @@ plugins {
 rootProject.name = "advent-of-code"
 
 include("main")
+include("ksp-annotations")
+include("ksp-processor")
