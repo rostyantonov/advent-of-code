@@ -59,8 +59,8 @@ class Day22 : AoCFileInput<List<String>, Int>() {
 
         iterateManaSpent(player, boss)
         return manaSpent
-        // result 900 for part 1
     }
+    // result 900 for part 1
 
     /**
      * On the next run through the game, you increase the difficulty to hard.
@@ -78,8 +78,8 @@ class Day22 : AoCFileInput<List<String>, Int>() {
         player.cast(Spell.INFINITE_LIFE_DRAIN, boss)
         iterateManaSpent(player, boss)
         return manaSpent
-        // result 1216 for part 2
     }
+    // result 1 216 for part 2
 
     private fun iterateManaSpent(
         player: WizardPlayer,
