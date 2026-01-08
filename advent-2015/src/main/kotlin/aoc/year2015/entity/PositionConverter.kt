@@ -1,7 +1,7 @@
 package aoc.year2015.entity
 
-import aoc.ksp.BaseEntity
 import aoc.common.entity.Position
+import aoc.ksp.BaseEntity
 import aoc.ksp.TypeConverter
 import kotlin.text.MatchGroupCollection
 

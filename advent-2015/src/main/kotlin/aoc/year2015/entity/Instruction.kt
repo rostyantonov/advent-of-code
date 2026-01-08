@@ -1,16 +1,16 @@
 package aoc.year2015.entity
 
-import aoc.ksp.FieldConverter
-import aoc.ksp.GenerateStructure
 import aoc.common.entity.Position
 import aoc.common.util.safeValue
+import aoc.ksp.FieldConverter
+import aoc.ksp.GenerateStructure
 
 @GenerateStructure
 data class Instruction(
     val cmd: String,
-    @FieldConverter(PositionConverter::class)
+    @param:FieldConverter(PositionConverter::class)
     val start: Position,
-    @FieldConverter(PositionConverter::class)
+    @param:FieldConverter(PositionConverter::class)
     val end: Position,
 ) {
     val command: Command = safeValue(cmd)

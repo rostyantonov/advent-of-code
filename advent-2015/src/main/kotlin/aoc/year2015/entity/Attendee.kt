@@ -1,7 +1,7 @@
 package aoc.year2015.entity
 
-import aoc.ksp.GenerateStructure
 import aoc.common.util.safeValue
+import aoc.ksp.GenerateStructure
 
 @GenerateStructure
 data class Attendee(

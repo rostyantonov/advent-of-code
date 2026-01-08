@@ -1,9 +1,9 @@
 package aoc.year2015.entity
 
-import aoc.ksp.BaseEntity
 import aoc.common.entity.BitOperation
-import aoc.ksp.TypeConverter
 import aoc.common.util.valueOrElse
+import aoc.ksp.BaseEntity
+import aoc.ksp.TypeConverter
 
 object BitOperationConverter : TypeConverter<BitOperation> {
     override fun convert(
