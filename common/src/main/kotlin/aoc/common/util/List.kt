@@ -19,3 +19,8 @@ fun <Type> List<Type>.splitBy(predicate: (Type) -> Boolean): List<List<Type>> =
         }
         acc
     }
+
+fun <E> List<E>.containsAny(otherList: List<E>): Boolean {
+    forEach { if (otherList.contains(it)) return true }
+    return false
+}
