@@ -78,12 +78,30 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
         while (position in input.indices) {
             var jump: Int? = null
             when (val ins = input[position]) {
-                is AsmInstruction.Hlf -> registers[ins.register] = (registers[ins.register] ?: 0) / 2
-                is AsmInstruction.Tpl -> registers[ins.register] = (registers[ins.register] ?: 0) * 3
-                is AsmInstruction.Inc -> registers[ins.register] = (registers[ins.register] ?: 0) + 1
-                is AsmInstruction.Jmp -> jump = ins.offset
-                is AsmInstruction.Jie -> if ((registers[ins.register] ?: 0) % 2 == 0) jump = ins.offset
-                is AsmInstruction.Jio -> if ((registers[ins.register] ?: 0) == 1) jump = ins.offset
+                is AsmInstruction.Hlf -> {
+                    registers[ins.register] = (registers[ins.register] ?: 0) / 2
+                }
+
+                is AsmInstruction.Tpl -> {
+                    registers[ins.register] = (registers[ins.register] ?: 0) * 3
+                }
+
+                is AsmInstruction.Inc -> {
+                    registers[ins.register] = (registers[ins.register] ?: 0) + 1
+                }
+
+                is AsmInstruction.Jmp -> {
+                    jump = ins.offset
+                }
+
+                is AsmInstruction.Jie -> {
+                    if ((registers[ins.register] ?: 0) % 2 == 0) jump = ins.offset
+                }
+
+                is AsmInstruction.Jio -> {
+                    if ((registers[ins.register] ?: 0) == 1) jump = ins.offset
+                }
+
                 else -> {} // ignore other commands
             }
             position += jump ?: 1
