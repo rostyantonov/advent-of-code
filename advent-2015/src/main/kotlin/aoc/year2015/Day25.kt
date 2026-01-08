@@ -2,19 +2,19 @@ package aoc.year2015
 
 import aoc.common.entity.Position
 import aoc.common.input.AoCFileInput
-import aoc.common.input.StructuredInput
 
-class Day25 : AoCFileInput<List<Position>, Long>() {
-    override val inputFunction
-        get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "To continue, please consult the code grid in the manual. +" +
-                                "Enter the code at row (?<row>\\d+), column (?<col>\\d+).",
-                    ),
-                builder = Position::fromLine,
-            )::getStructInput
+class Day25 : AoCFileInput<Position, Long>() {
+    override val inputFunction: (List<String>) -> Position = { lines ->
+        val regex = Regex(
+            "To continue, please consult the code grid in the manual. +" +
+                    "Enter the code at row (\\d+), column (\\d+)\\."
+        )
+        val match = regex.find(lines.first())
+            ?: throw IllegalArgumentException("Could not parse input: ${lines.first()}")
+        val row = match.groupValues[1].toInt()
+        val col = match.groupValues[2].toInt()
+        Position(row, col)
+    }
 
     /**
      * Merry Christmas! Santa is booting up his weather machine; looks like you might get a white Christmas after all.
@@ -78,19 +78,19 @@ class Day25 : AoCFileInput<List<Position>, Long>() {
      * What code do you give the machine?
      */
     override fun processPartOne(): Long {
-        val target = input.first()
+        val target = input
         var current = Position(1, 1)
         var value = 20151125L
         val multiplier = 252533L
         val divider = 33554393L
 
-        do {
+        while (current != target) {
             value = (value * multiplier) % divider
             current = current.getUpRight()
             if (current.row == 0) {
-                current = Position(row = 1, col = current.col)
+                current = Position(row = current.col, col = 1)
             }
-        } while (current != target)
+        }
         return value
         // result 8 997 277 for part 1
     }
