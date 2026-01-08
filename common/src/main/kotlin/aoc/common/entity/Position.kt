@@ -1,7 +1,9 @@
 package aoc.common.entity
 
+import aoc.ksp.GenerateStructure
 import kotlin.math.abs
 
+@GenerateStructure
 data class Position(
     val row: Int,
     val col: Int,
