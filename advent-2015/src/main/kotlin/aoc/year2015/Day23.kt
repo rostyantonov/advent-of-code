@@ -1,6 +1,7 @@
 package aoc.year2015
 
 import aoc.common.entity.AsmInstruction
+import aoc.common.entity.AsmInstructionCompanion
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredMultiInput
 
@@ -14,7 +15,7 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
                         Regex("(?<cmd>jmp) (?<offset>[\\\\+|-]\\d+)"),
                         Regex("(?<cmd>jie|jio) (?<register>[ab]{1}), (?<offset>[\\\\+|-]\\d+)"),
                     ),
-                builder = AsmInstruction::fromLine,
+                builder = AsmInstructionCompanion::fromLine,
             )::getStructInput
 
     /**

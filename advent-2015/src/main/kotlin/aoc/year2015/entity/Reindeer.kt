@@ -1,10 +1,10 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.BaseEntity.getAsInt
-import aoc.common.entity.BaseEntity.getAsString
-import aoc.common.entity.GenerateStructure
+import aoc.ksp.BaseEntity.getAsInt
+import aoc.ksp.BaseEntity.getAsString
+import aoc.ksp.GenerateStructure
 import aoc.common.entity.IDataClass
-import aoc.common.entity.IStructure
+import aoc.ksp.IStructure
 
 @GenerateStructure
 data class Reindeer(

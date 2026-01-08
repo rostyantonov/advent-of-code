@@ -1,4 +1,4 @@
-package aoc.common.entity
+package aoc.ksp
 
 interface IStructureMulti<Type : Any> {
     fun fromLine(

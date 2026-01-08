@@ -1,6 +1,6 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.GenerateStructure
+import aoc.ksp.GenerateStructure
 import aoc.common.util.safeValue
 
 @GenerateStructure

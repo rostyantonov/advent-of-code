@@ -1,7 +1,7 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.FieldConverter
-import aoc.common.entity.GenerateStructure
+import aoc.ksp.FieldConverter
+import aoc.ksp.GenerateStructure
 import aoc.common.entity.Position
 import aoc.common.util.safeValue
 

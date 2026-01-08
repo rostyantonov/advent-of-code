@@ -1,8 +1,8 @@
 package aoc.year2015.entity
 
-import aoc.common.entity.BaseEntity
+import aoc.ksp.BaseEntity
 import aoc.common.entity.BitOperation
-import aoc.common.entity.TypeConverter
+import aoc.ksp.TypeConverter
 import aoc.common.util.valueOrElse
 
 object BitOperationConverter : TypeConverter<BitOperation> {

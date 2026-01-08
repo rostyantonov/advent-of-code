@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation(project(":common"))
-    ksp(project(":common"))
+    ksp(project(":ksp-processor"))
     testImplementation(testFixtures(project(":common")))
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.core)

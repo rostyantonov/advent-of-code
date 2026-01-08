@@ -1,5 +1,8 @@
 package aoc.common.entity
 
+import aoc.ksp.GenerateStructure
+
+@GenerateStructure(multiStructure = true, discriminatorField = "cmd")
 sealed class AsmInstruction {
     data class Hlf(
         val register: String,
@@ -40,41 +43,4 @@ sealed class AsmInstruction {
         val value: String,
         val offset: Int,
     ) : AsmInstruction()
-
-    companion object : IStructureMulti<AsmInstruction> {
-        override fun create(collection: MatchGroupCollection): AsmInstruction {
-            val discriminator = BaseEntity.getAsString(collection, "cmd").uppercase()
-            return when (discriminator) {
-                "HLF" -> Hlf(BaseEntity.getAsString(collection, "register"))
-                "TPL" -> Tpl(BaseEntity.getAsString(collection, "register"))
-                "INC" -> Inc(BaseEntity.getAsString(collection, "register"))
-                "DEC" -> Dec(BaseEntity.getAsString(collection, "register"))
-                "JMP" -> Jmp(BaseEntity.getAsInt(collection, "offset"))
-                "JIE" ->
-                    Jie(
-                        register = BaseEntity.getAsString(collection, "register"),
-                        offset = BaseEntity.getAsInt(collection, "offset"),
-                    )
-                "JIO" ->
-                    Jio(
-                        register = BaseEntity.getAsString(collection, "register"),
-                        offset = BaseEntity.getAsInt(collection, "offset"),
-                    )
-                "CPY" ->
-                    Cpy(
-                        value = BaseEntity.getAsString(collection, "value"),
-                        register = BaseEntity.getAsString(collection, "register"),
-                    )
-                "JNZ" ->
-                    Jnz(
-                        value = BaseEntity.getAsString(collection, "value"),
-                        offset = BaseEntity.getAsInt(collection, "offset"),
-                    )
-                else -> {
-                    throw IllegalArgumentException("Unknown discriminator value: $discriminator in AsmInstruction creation")
-                }
-            }
-        }
-    }
 }
-

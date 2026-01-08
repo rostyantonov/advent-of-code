@@ -1,5 +1,6 @@
 package aoc.common.entity
 
+import aoc.ksp.BaseEntity
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals

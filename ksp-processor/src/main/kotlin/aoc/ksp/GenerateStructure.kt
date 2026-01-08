@@ -1,4 +1,4 @@
-package aoc.common.entity
+package aoc.ksp
 
 /**
  * Annotation to mark data classes that should have their IStructure companion object generated.
