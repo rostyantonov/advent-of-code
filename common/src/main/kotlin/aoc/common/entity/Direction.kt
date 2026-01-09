@@ -8,4 +8,7 @@ object Direction {
     const val DOWN_ARROW = 'v'
     const val LEFT_ARROW = '<'
     const val RIGHT_ARROW = '>'
+
+    const val LEFT_CHAR = 'L'
+    const val RIGHT_CHAR = 'R'
 }
