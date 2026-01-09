@@ -4,14 +4,62 @@ This framework provides automatic code generation for entity classes that need t
 
 ## Overview
 
-The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to automatically generate an `IStructure` implementation for your data classes. This eliminates boilerplate code for parsing regex-matched input.
+The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to automatically generate companion objects implementing `IStructure`, `IStructureLine`, `IStructureCustomLine`, or `IStructureMulti` for your data classes. This eliminates boilerplate code for parsing regex-matched input.
 
 ## Features
 
-- **Automatic Implementation Generation**: Annotate your data class and get a complete `IStructure` companion object
-- **Type Support**: Supports Int, Long, String, Char, UShort (nullable and non-nullable)
+- **Automatic Implementation Generation**: Annotate your data class and get a complete companion object
+- **Multiple Patterns**: Supports standard, line-based, custom line, and multi-structure patterns
+- **Type Support**: Supports Int, Long, String, Char, UShort, Double, Float, Boolean, Byte, Short (nullable and non-nullable)
 - **Field Name Mapping**: Automatically maps regex named groups to field names
 - **Extensible**: Easy to add support for additional types in `BaseEntity`
+
+## Generation Modes
+
+### Standard Mode (IStructure)
+Parses a single match per line and extracts fields from named groups.
+
+```kotlin
+@GenerateStructure
+data class Person(
+    val name: String,
+    val age: Int,
+)
+```
+
+### Line-Based Mode (IStructureLine) 
+Finds all regex matches in a line and creates a list of entities. Useful for parsing multiple occurrences in one line.
+
+```kotlin
+@GenerateStructure(lineBased = true)
+data class WalkerInstruction(
+    val direction: Char,
+    val steps: Int,
+)
+// Parses "R3, L5, R2" -> List(WalkerInstruction('R', 3), WalkerInstruction('L', 5), WalkerInstruction('R', 2))
+```
+
+### Custom Line Mode (IStructureCustomLine)
+Processes the entire line and all match results, allowing for custom parsing logic.
+
+```kotlin
+@GenerateStructure(customLine = true)
+data class Molecule(
+    val stringValue: String,
+    val atoms: List<Atom>,
+)
+```
+
+### Multi-Structure Mode (IStructureMulti)
+Routes to different sealed subclasses based on a discriminator field.
+
+```kotlin
+@GenerateStructure(multiStructure = true, discriminatorField = "cmd")
+sealed class AsmInstruction {
+    data class Jmp(val offset: Int) : AsmInstruction()
+    data class Inc(val register: String) : AsmInstruction()
+}
+```
 
 ## Usage
 
@@ -32,21 +80,30 @@ data class Person(
 
 ### 2. Use the Generated Code
 
-The framework generates a standalone `PersonCompanion` object and extension function:
+The framework generates a standalone companion object:
 
+**Standard Mode:**
 ```kotlin
 // Define your regex with named groups matching the field names
 val regex = Regex("(?<name>\\w+) age (?<age>\\d+) score (?<score>\\d+)")
 
-// Use the generated companion to parse input
-val person = Person.Companion.fromRegex("John age 25 score 100", regex)
+// Use the standalone object directly
+val person = PersonCompanion.fromLine("Jane age 30 score 200", regex)
+```
 
-// Or use the standalone object directly
-val person2 = PersonCompanion.fromLine("Jane age 30 score 200", regex)
+**Line-Based Mode:**
+```kotlin
+// Define your regex - will be applied with findAll() to find all matches
+val regex = Regex("(?<direction>[LR])(?<steps>\\d+)")
+
+// Parse multiple instructions from a single line
+val instructions = WalkerInstructionCompanion.fromLine("R3, L5, R2, L2", regex)
+// Returns: List(WalkerInstruction('R', 3), WalkerInstruction('L', 5), ...)
 ```
 
 ### 3. Integration with StructuredInput
 
+**Standard Mode:**
 ```kotlin
 class MyDay : AoCFileInput<List<Person>, Int>() {
     override val inputFunction
@@ -57,6 +114,22 @@ class MyDay : AoCFileInput<List<Person>, Int>() {
     
     override fun processPartOne(): Int {
         return input.sumOf { it.score.toInt() }
+    }
+}
+```
+
+**Line-Based Mode:**
+```kotlin
+class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
+    override val inputFunction
+        get() = StructuredInput<List<WalkerInstruction>>(
+            regex = Regex("(?<direction>[LR])(?<steps>\\d+)"),
+            builder = WalkerInstructionCompanion::fromLine,
+        )::getSingleStructInput
+    
+    override fun processPartOne(): Int {
+        // input is already List<WalkerInstruction> from parsing the single line
+        return input.sumOf { it.steps }
     }
 }
 ```
