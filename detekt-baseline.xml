@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MaxLineLength:Day05.kt$Day05$*</ID>
+  </CurrentIssues>
+</SmellBaseline>

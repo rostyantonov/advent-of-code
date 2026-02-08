@@ -1,0 +1,726 @@
+package aoc.ksp
+
+import aoc.ksp.FieldConverter
+import aoc.ksp.GenerateStructure
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.validate
+
+class StructureProcessor(
+    private val codeGenerator: CodeGenerator,
+    private val logger: KSPLogger,
+) : SymbolProcessor {
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        val symbols = resolver.getSymbolsWithAnnotation(GenerateStructure::class.qualifiedName!!)
+        val ret = symbols.filter { !it.validate() }.toList()
+
+        symbols
+            .filter { it is KSClassDeclaration && it.validate() }
+            .forEach { it.accept(StructureVisitor(), Unit) }
+
+        return ret
+    }
+
+    inner class StructureVisitor : KSVisitorVoid() {
+        override fun visitClassDeclaration(
+            classDeclaration: KSClassDeclaration,
+            data: Unit,
+        ) {
+            val packageName = classDeclaration.packageName.asString()
+            val className = classDeclaration.simpleName.asString()
+
+            // Check if class already has a companion object
+            val hasCompanion =
+                classDeclaration.declarations.any {
+                    it is KSClassDeclaration && it.isCompanionObject
+                }
+
+            if (hasCompanion) {
+                logger.warn("@GenerateStructure: $className already has a companion object, skipping generation", classDeclaration)
+                return
+            }
+
+            // Check for customLine, multiStructure, and lineBased parameters FIRST
+            val generateAnnotation =
+                classDeclaration.annotations.find {
+                    it.shortName.asString() == "GenerateStructure"
+                }
+            val isCustomLine =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "customLine" }
+                    ?.value as? Boolean ?: false
+            val isMultiStructure =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "multiStructure" }
+                    ?.value as? Boolean ?: false
+            val isLineBased =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "lineBased" }
+                    ?.value as? Boolean ?: false
+            val discriminatorField =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "discriminatorField" }
+                    ?.value as? String ?: "type"
+
+            // For non-multiStructure classes, check for primary constructor parameters
+            val parameters = if (!isMultiStructure) {
+                val constructor = classDeclaration.primaryConstructor
+                if (constructor == null) {
+                    logger.error("@GenerateStructure class must have a primary constructor", classDeclaration)
+                    return
+                }
+
+                val params = constructor.parameters
+                if (params.isEmpty()) {
+                    logger.error("@GenerateStructure class must have at least one parameter", classDeclaration)
+                    return
+                }
+                params
+            } else {
+                emptyList()
+            }
+
+            // Generate the companion object implementation
+            val file =
+                codeGenerator.createNewFile(
+                    dependencies = Dependencies(true, classDeclaration.containingFile!!),
+                    packageName = packageName,
+                    fileName = "${className}Companion",
+                )
+
+            file.bufferedWriter().use { writer ->
+                when {
+                    isMultiStructure -> {
+                        generateMultiStructureCompanion(
+                            writer,
+                            packageName,
+                            className,
+                            classDeclaration,
+                            discriminatorField,
+                        )
+                    }
+
+                    isCustomLine -> {
+                        generateCustomLineCompanion(writer, packageName, className, parameters)
+                    }
+
+                    isLineBased -> {
+                        generateLineBasedCompanion(writer, packageName, className, parameters)
+                    }
+
+                    else -> {
+                        generateStandardCompanion(writer, packageName, className, parameters)
+                    }
+                }
+            }
+
+            val companionType =
+                when {
+                    isMultiStructure -> "IStructureMulti"
+                    isCustomLine -> "IStructureCustomLine"
+                    isLineBased -> "IStructureLine"
+                    else -> "IStructure"
+                }
+            logger.info("Generated $companionType companion for $packageName.$className")
+        }
+
+        private fun generateStandardCompanion(
+            writer: java.io.Writer,
+            packageName: String,
+            className: String,
+            parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>,
+        ) {
+            // Collect custom converters needed
+            val customConverters =
+                parameters
+                    .mapNotNull { param ->
+                        param.annotations
+                            .find { annotation ->
+                                annotation.shortName.asString() == "FieldConverter"
+                            }?.let { annotation ->
+                                val converterType =
+                                    annotation.arguments
+                                        .find { it.name?.asString() == "converter" }
+                                        ?.value as? KSType
+                                converterType?.declaration?.qualifiedName?.asString()
+                            }
+                    }.toSet()
+
+            writer.write(
+                """
+                |@file:Suppress("unused")
+                |
+                |package $packageName
+                |
+                |import aoc.ksp.BaseEntity
+                |import aoc.ksp.IStructure${if (customConverters.isEmpty()) {
+                    ""
+                } else {
+                    "\n|${customConverters.joinToString(
+                        "\n",
+                    ) { "import $it" }}"
+                }}
+                |
+                |/**
+                | * Generated by KSP StructureProcessor
+                | * Standalone companion object that implements IStructure<$className>
+                | *
+                | * Supported field types:
+                | * - Int, Long, String, Char, UShort
+                | * - Double, Float, Boolean, Byte, Short
+                | * - Nullable variants of all types above
+                | * - Custom types with @FieldConverter annotation
+                | *
+                | * Usage: ${className}Companion.fromLine(line, regex)
+                | * Example:
+                | *   val regex = Regex("(?<field1>\\d+) (?<field2>\\w+)")
+                | *   val entity = ${className}Companion.fromLine("123 abc", regex)
+                | *
+                | * Note: Regex named groups must match field names exactly
+                | */
+                |object ${className}Companion : IStructure<$className> {
+                |    override fun create(collection: MatchGroupCollection): $className =
+                |        $className(
+                |${generateParameterMappings(parameters)},
+                |        )
+                |}
+                |
+                """.trimMargin(),
+            )
+        }
+
+        private fun generateCustomLineCompanion(
+            writer: java.io.Writer,
+            packageName: String,
+            className: String,
+            parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>,
+        ) {
+            writer.write(
+                """
+                |@file:Suppress("unused")
+                |
+                |package $packageName
+                |
+                |import aoc.ksp.IStructureCustomLine
+                |
+                |/**
+                | * Generated by KSP StructureProcessor
+                | * Standalone companion object that implements IStructureCustomLine<$className>
+                | *
+                | * This companion processes the entire line and match sequence,
+                | * allowing for custom parsing logic that goes beyond simple field extraction.
+                | *
+                | * Usage: ${className}Companion.fromLine(line, regex)
+                | * Example:
+                | *   val regex = Regex("[A-Z][a-z]?")
+                | *   val entity = ${className}Companion.fromLine("CaRnAlBSi", regex)
+                | *
+                | * Note: The create method receives both the line and all matches
+                | */
+                |object ${className}Companion : IStructureCustomLine<$className> {
+                |    override fun create(
+                |        line: String,
+                |        collection: Sequence<MatchResult>,
+                |    ): $className =
+                |        $className(
+                |${generateCustomLineParameterMappings(parameters)},
+                |        )
+                |}
+                |
+                """.trimMargin(),
+            )
+        }
+
+        private fun generateCustomLineParameterMappings(parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>): String {
+            // For custom line processing, we expect specific parameter patterns
+            // The first parameter is typically the line itself, and subsequent parameters
+            // are derived from the collection
+            return parameters.joinToString(",\n") { param ->
+                val name = param.name?.asString() ?: "unknown"
+                val type = param.type.resolve()
+                val typeString = type.declaration.simpleName.asString()
+
+                when {
+                    typeString == "String" && name == "stringValue" -> {
+                        "            $name = line"
+                    }
+
+                    typeString == "List" -> {
+                        // For List types, we convert the collection
+                        val typeArg =
+                            type.arguments
+                                .firstOrNull()
+                                ?.type
+                                ?.resolve()
+                        val innerType = typeArg?.declaration?.simpleName?.asString() ?: "Unknown"
+                        "            $name = collection.toList().map { $innerType(it.value) }"
+                    }
+
+                    else -> {
+                        logger.warn("Custom line parameter '$name' of type '$typeString' may need manual mapping", param)
+                        "            $name = TODO(\"Map $name from line or collection\")"
+                    }
+                }
+            }
+        }
+
+        private fun generateLineBasedCompanion(
+            writer: java.io.Writer,
+            packageName: String,
+            className: String,
+            parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>,
+        ) {
+            // Collect custom converters needed
+            val customConverters =
+                parameters
+                    .mapNotNull { param ->
+                        param.annotations
+                            .find { annotation ->
+                                annotation.shortName.asString() == "FieldConverter"
+                            }?.let { annotation ->
+                                val converterType =
+                                    annotation.arguments
+                                        .find { it.name?.asString() == "converter" }
+                                        ?.value as? KSType
+                                converterType?.declaration?.qualifiedName?.asString()
+                            }
+                    }.toSet()
+
+            writer.write(
+                """
+                |@file:Suppress("unused")
+                |
+                |package $packageName
+                |
+                |import aoc.ksp.BaseEntity
+                |import aoc.ksp.IStructureLine${if (customConverters.isEmpty()) {
+                    ""
+                } else {
+                    "\n|${customConverters.joinToString(
+                        "\n",
+                    ) { "import $it" }}"
+                }}
+                |
+                |/**
+                | * Generated by KSP StructureProcessor
+                | * Standalone companion object that implements IStructureLine<$className>
+                | *
+                | * This companion finds all regex matches in a line and creates a list of entities.
+                | * Useful for parsing multiple occurrences of a pattern in a single line.
+                | *
+                | * Supported field types:
+                | * - Int, Long, String, Char, UShort
+                | * - Double, Float, Boolean, Byte, Short
+                | * - Nullable variants of all types above
+                | * - Custom types with @FieldConverter annotation
+                | *
+                | * Usage: ${className}Companion.fromLine(line, regex)
+                | * Example:
+                | *   val regex = Regex("(?<direction>[LR])(?<steps>\\d+)")
+                | *   val instructions = ${className}Companion.fromLine("R3, L5, R2", regex)
+                | *   // Returns List(${className}('R', 3), ${className}('L', 5), ${className}('R', 2))
+                | *
+                | * Note: Regex will be applied with findAll() to find all matches in the line
+                | * Note: Regex named groups must match field names exactly
+                | */
+                |object ${className}Companion : IStructureLine<$className> {
+                |    override fun create(collection: MatchResult): $className =
+                |        $className(
+                |${generateLineBasedParameterMappings(parameters)},
+                |        )
+                |}
+                |
+                """.trimMargin(),
+            )
+        }
+
+        private fun generateLineBasedParameterMappings(parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>): String =
+            parameters.joinToString(",\n") { param ->
+                val name = param.name?.asString() ?: "unknown"
+
+                // Check for custom converter annotation
+                val customConverter =
+                    param.annotations.find { annotation ->
+                        annotation.shortName.asString() == "FieldConverter"
+                    }
+
+                if (customConverter != null) {
+                    val converterType =
+                        customConverter.arguments
+                            .find { it.name?.asString() == "converter" }
+                            ?.value as? KSType
+                    val converterName = converterType?.declaration?.simpleName?.asString() ?: "UnknownConverter"
+                    return@joinToString "            $name = $converterName.convert(collection.groups, \"$name\")"
+                }
+
+                val type = param.type.resolve()
+                val typeString = type.declaration.simpleName.asString()
+                val isNullable = type.isMarkedNullable
+
+                // Use collection.groups instead of collection for MatchResult
+                val getter =
+                    when {
+                        typeString == "Int" && !isNullable -> {
+                            "BaseEntity.getAsInt(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Int" && isNullable -> {
+                            "BaseEntity.getAsNullableInt(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "String" && !isNullable -> {
+                            "BaseEntity.getAsString(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "String" && isNullable -> {
+                            "BaseEntity.getAsNullableString(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Long" && !isNullable -> {
+                            "BaseEntity.getAsLong(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Long" && isNullable -> {
+                            "BaseEntity.getAsNullableLong(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Char" && !isNullable -> {
+                            "BaseEntity.getAsChar(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Char" && isNullable -> {
+                            "BaseEntity.getAsNullableChar(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "UShort" && !isNullable -> {
+                            "BaseEntity.getAsUShort(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "UShort" && isNullable -> {
+                            "BaseEntity.getAsNullableUShort(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Double" && !isNullable -> {
+                            "BaseEntity.getAsDouble(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Double" && isNullable -> {
+                            "BaseEntity.getAsNullableDouble(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Float" && !isNullable -> {
+                            "BaseEntity.getAsFloat(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Float" && isNullable -> {
+                            "BaseEntity.getAsNullableFloat(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Boolean" && !isNullable -> {
+                            "BaseEntity.getAsBoolean(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Boolean" && isNullable -> {
+                            "BaseEntity.getAsNullableBoolean(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Byte" && !isNullable -> {
+                            "BaseEntity.getAsByte(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Byte" && isNullable -> {
+                            "BaseEntity.getAsNullableByte(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Short" && !isNullable -> {
+                            "BaseEntity.getAsShort(collection.groups, \"$name\")"
+                        }
+
+                        typeString == "Short" && isNullable -> {
+                            "BaseEntity.getAsNullableShort(collection.groups, \"$name\")"
+                        }
+
+                        else -> {
+                            logger.error(
+                                "Unsupported type: $typeString${if (isNullable) "?" else ""} for parameter $name. " +
+                                    "Supported types: Int, Long, String, Char, UShort, Double, Float, Boolean, " +
+                                    "Byte, Short (and nullable variants). " +
+                                    "For custom types, use @FieldConverter annotation with a TypeConverter implementation.",
+                                param,
+                            )
+                            // Return a placeholder that will cause a compile error with a clear message
+                            "TODO(\"Add @FieldConverter for ${typeString}${if (isNullable) "?" else ""} or add support in BaseEntity\")"
+                        }
+                    }
+
+                "            $name = $getter"
+            }
+
+
+        private fun generateParameterMappings(parameters: List<com.google.devtools.ksp.symbol.KSValueParameter>): String =
+            parameters.joinToString(",\n") { param ->
+                val name = param.name?.asString() ?: "unknown"
+
+                // Check for custom converter annotation
+                val customConverter =
+                    param.annotations.find { annotation ->
+                        annotation.shortName.asString() == "FieldConverter"
+                    }
+
+                if (customConverter != null) {
+                    val converterType =
+                        customConverter.arguments
+                            .find { it.name?.asString() == "converter" }
+                            ?.value as? KSType
+                    val converterName = converterType?.declaration?.simpleName?.asString() ?: "UnknownConverter"
+                    return@joinToString "            $name = $converterName.convert(collection, \"$name\")"
+                }
+
+                val type = param.type.resolve()
+                val typeString = type.declaration.simpleName.asString()
+                val isNullable = type.isMarkedNullable
+
+                val getter =
+                    when {
+                        typeString == "Int" && !isNullable -> {
+                            "BaseEntity.getAsInt(collection, \"$name\")"
+                        }
+
+                        typeString == "Int" && isNullable -> {
+                            "BaseEntity.getAsNullableInt(collection, \"$name\")"
+                        }
+
+                        typeString == "String" && !isNullable -> {
+                            "BaseEntity.getAsString(collection, \"$name\")"
+                        }
+
+                        typeString == "String" && isNullable -> {
+                            "BaseEntity.getAsNullableString(collection, \"$name\")"
+                        }
+
+                        typeString == "Long" && !isNullable -> {
+                            "BaseEntity.getAsLong(collection, \"$name\")"
+                        }
+
+                        typeString == "Long" && isNullable -> {
+                            "BaseEntity.getAsNullableLong(collection, \"$name\")"
+                        }
+
+                        typeString == "Char" && !isNullable -> {
+                            "BaseEntity.getAsChar(collection, \"$name\")"
+                        }
+
+                        typeString == "Char" && isNullable -> {
+                            "BaseEntity.getAsNullableChar(collection, \"$name\")"
+                        }
+
+                        typeString == "UShort" && !isNullable -> {
+                            "BaseEntity.getAsUShort(collection, \"$name\")"
+                        }
+
+                        typeString == "UShort" && isNullable -> {
+                            "BaseEntity.getAsNullableUShort(collection, \"$name\")"
+                        }
+
+                        typeString == "Double" && !isNullable -> {
+                            "BaseEntity.getAsDouble(collection, \"$name\")"
+                        }
+
+                        typeString == "Double" && isNullable -> {
+                            "BaseEntity.getAsNullableDouble(collection, \"$name\")"
+                        }
+
+                        typeString == "Float" && !isNullable -> {
+                            "BaseEntity.getAsFloat(collection, \"$name\")"
+                        }
+
+                        typeString == "Float" && isNullable -> {
+                            "BaseEntity.getAsNullableFloat(collection, \"$name\")"
+                        }
+
+                        typeString == "Boolean" && !isNullable -> {
+                            "BaseEntity.getAsBoolean(collection, \"$name\")"
+                        }
+
+                        typeString == "Boolean" && isNullable -> {
+                            "BaseEntity.getAsNullableBoolean(collection, \"$name\")"
+                        }
+
+                        typeString == "Byte" && !isNullable -> {
+                            "BaseEntity.getAsByte(collection, \"$name\")"
+                        }
+
+                        typeString == "Byte" && isNullable -> {
+                            "BaseEntity.getAsNullableByte(collection, \"$name\")"
+                        }
+
+                        typeString == "Short" && !isNullable -> {
+                            "BaseEntity.getAsShort(collection, \"$name\")"
+                        }
+
+                        typeString == "Short" && isNullable -> {
+                            "BaseEntity.getAsNullableShort(collection, \"$name\")"
+                        }
+
+                        else -> {
+                            logger.error(
+                                "Unsupported type: $typeString${if (isNullable) "?" else ""} for parameter $name. " +
+                                    "Supported types: Int, Long, String, Char, UShort, Double, Float, Boolean, " +
+                                    "Byte, Short (and nullable variants). " +
+                                    "For custom types, use @FieldConverter annotation with a TypeConverter implementation.",
+                                param,
+                            )
+                            // Return a placeholder that will cause a compile error with a clear message
+                            "TODO(\"Add @FieldConverter for ${typeString}${if (isNullable) "?" else ""} or add support in BaseEntity\")"
+                        }
+                    }
+
+                "            $name = $getter"
+            }
+    }
+
+    private fun generateMultiStructureCompanion(
+        writer: java.io.Writer,
+        packageName: String,
+        className: String,
+        classDeclaration: KSClassDeclaration,
+        discriminatorField: String,
+    ) {
+        // Get all sealed subclasses
+        val sealedSubclasses =
+            classDeclaration.getSealedSubclasses().toList()
+
+        if (sealedSubclasses.isEmpty()) {
+            logger.error("@GenerateStructure(multiStructure=true) requires a sealed class with subclasses", classDeclaration)
+            return
+        }
+
+        writer.write(
+            """
+            |@file:Suppress("unused")
+            |
+            |package $packageName
+            |
+            |import aoc.ksp.BaseEntity
+            |import aoc.ksp.IStructureMulti
+            |
+            |/**
+            | * Generated by KSP StructureProcessor
+            | * Standalone companion object that implements IStructureMulti<$className>
+            | *
+            | * Routes to the appropriate sealed subclass based on discriminator field '$discriminatorField'.
+            | *
+            | * Supported subclasses:
+            |${sealedSubclasses.joinToString("\n") { " * - ${it.simpleName.asString()}" }}
+            | *
+            | * Usage: ${className}Companion.fromLine(line, regexArray)
+            | * Example:
+            | *   val regexArray = arrayOf(
+            | *       Regex("(?<cmd>jmp) (?<offset>[+-]\\d+)"),
+            | *       Regex("(?<cmd>inc) (?<register>[a-z]+)")
+            | *   )
+            | *   val instruction = ${className}Companion.fromLine("jmp +10", regexArray)
+            | *
+            | * Note: Regex named groups must match field names exactly
+            | * Note: Discriminator field '$discriminatorField' is used to determine the subclass
+            | */
+            |object ${className}Companion : IStructureMulti<$className> {
+            |    override fun create(collection: MatchGroupCollection): $className {
+            |        val discriminator = BaseEntity.getAsString(collection, "$discriminatorField").uppercase()
+            |        return when (discriminator) {
+            |${generateSealedSubclassCases(sealedSubclasses, className)}
+            |
+            |            else -> {
+            |                throw IllegalArgumentException("Unknown discriminator value: ${"$"}discriminator in $className creation")
+            |            }
+            |        }
+            |    }
+            |}
+            |
+            """.trimMargin(),
+        )
+    }
+
+    private fun generateSealedSubclassCases(
+        subclasses: List<KSClassDeclaration>,
+        className: String,
+    ): String =
+        subclasses.joinToString("\n\n") { subclass ->
+            val subclassName = subclass.simpleName.asString()
+            // Map subclass name to uppercase for discriminator (e.g., Hlf -> HLF, Jmp -> JMP)
+            val discriminatorValue = subclassName.uppercase()
+
+            val constructor = subclass.primaryConstructor
+            val parameters = constructor?.parameters ?: emptyList()
+
+            val parameterMappings =
+                if (parameters.isEmpty()) {
+                    ""
+                } else {
+                    val paramsList =
+                        parameters.joinToString(",\n") { param ->
+                            val paramName = param.name!!.asString()
+                            val paramType = param.type.resolve()
+                            val typeString = paramType.declaration.simpleName.asString()
+                            val isNullable = paramType.isMarkedNullable
+
+                            val getter =
+                                when (typeString) {
+                                    "Int" -> {
+                                        if (isNullable) {
+                                            "BaseEntity.getAsNullableInt(collection, \"$paramName\")"
+                                        } else {
+                                            "BaseEntity.getAsInt(collection, \"$paramName\")"
+                                        }
+                                    }
+
+                                    "String" -> {
+                                        if (isNullable) {
+                                            "BaseEntity.getAsNullableString(collection, \"$paramName\")"
+                                        } else {
+                                            "BaseEntity.getAsString(collection, \"$paramName\")"
+                                        }
+                                    }
+
+                                    "Long" -> {
+                                        if (isNullable) {
+                                            "BaseEntity.getAsNullableLong(collection, \"$paramName\")"
+                                        } else {
+                                            "BaseEntity.getAsLong(collection, \"$paramName\")"
+                                        }
+                                    }
+
+                                    else -> {
+                                        "TODO(\"Add support for type $typeString\")"
+                                    }
+                                }
+
+                            "                    $paramName = $getter"
+                        }
+                    "(\n$paramsList,\n                )"
+                }
+
+            "            \"$discriminatorValue\" -> {\n                $className.$subclassName$parameterMappings\n            }"
+        }
+}
+
+
+/**
+ * Provider for StructureProcessor
+ */
+class StructureProcessorProvider : com.google.devtools.ksp.processing.SymbolProcessorProvider {
+    override fun create(environment: com.google.devtools.ksp.processing.SymbolProcessorEnvironment): com.google.devtools.ksp.processing.SymbolProcessor {
+        return StructureProcessor(environment.codeGenerator, environment.logger)
+    }
+}
