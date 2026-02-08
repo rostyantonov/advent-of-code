@@ -9,6 +9,11 @@ echo "Fetching all branches from remote..."
 git fetch --all
 
 echo "Checking out the experiment branch..."
-git checkout experiment
+if git rev-parse --verify origin/experiment > /dev/null 2>&1; then
+    git checkout experiment
+else
+    echo "Error: 'experiment' branch not found on remote."
+    exit 1
+fi
 
 echo "Repository setup complete. All branches fetched and 'experiment' branch is now active."
