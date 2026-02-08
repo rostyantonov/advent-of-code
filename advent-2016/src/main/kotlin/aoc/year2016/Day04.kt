@@ -40,8 +40,8 @@ class Day04 : AoCFileInput<List<Room>, Int>() {
      *
      * What is the sum of the sector IDs of the real rooms?
      */
-    override fun processPartOne(): Int = input.filter { it.isDecoy() }.sumOf { it.id }
-    // result 409 147 for part 1
+    override fun processPartOne(): Int = input.filter { it.isReal() }.sumOf { it.id }
+    // result 409147 for part 1
 
     /**
      * With all the decoy data out of the way, it's time to decrypt this list and get moving.
@@ -57,6 +57,6 @@ class Day04 : AoCFileInput<List<Room>, Int>() {
      *
      * What is the sector ID of the room where North Pole objects are stored?
      */
-    override fun processPartTwo(): Int = input.filter { it.isDecoy() }.first { it.decryptedName() == "northpole object storage " }.id
-    // return 991 for part 2
+    override fun processPartTwo(): Int = input.filter { it.isReal() }.first { it.decryptedName() == "northpole object storage " }.id
+    // result 991 for part 2
 }
