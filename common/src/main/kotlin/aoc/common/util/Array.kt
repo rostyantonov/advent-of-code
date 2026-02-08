@@ -1,5 +1,7 @@
 package aoc.common.util
 
+import aoc.common.entity.Position
+
 operator fun <Type> Array<Array<Type>>.set(
     row: Int,
     col: Int,
@@ -14,6 +16,13 @@ operator fun <Type> Array<Array<Type>>.get(
 ): Type? =
     try {
         this[row][col]
+    } catch (_: IndexOutOfBoundsException) {
+        null
+    }
+
+operator fun <T> Array<Array<T?>>.get(position: Position): T? =
+    try {
+        this[position.row][position.col]
     } catch (_: IndexOutOfBoundsException) {
         null
     }
