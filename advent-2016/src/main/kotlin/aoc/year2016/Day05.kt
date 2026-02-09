@@ -1,5 +1,6 @@
 package aoc.year2016
 
+import aoc.common.entity.CharConstants.EMPTY_SPACE
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StringInput
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class Day05 : AoCFileInput<String, String>() {
      *
      * Given the actual Door ID, what is the password?
      */
-    override fun processPartOne(): String = solveDay5Parallel(part2 = false)
+    override fun processPartOne(): String = solveInParallel(part2 = false)
     // result d4cd2ee1 for part 1
 
     /**
@@ -65,12 +66,12 @@ class Day05 : AoCFileInput<String, String>() {
      * Given the actual Door ID and this new method, what is the password?
      * Be extra proud of your solution if it uses a cinematic "decrypting" animation.
      */
-    override fun processPartTwo(): String = solveDay5Parallel(part2 = true)
+    override fun processPartTwo(): String = solveInParallel(part2 = true)
     // result f2c730e5 for part 2
 
-    private fun solveDay5Parallel(part2: Boolean = false): String =
+    private fun solveInParallel(part2: Boolean = false): String =
         runBlocking {
-            val password = CharArray(PASSWORD_LENGTH) { ' ' }
+            val password = CharArray(PASSWORD_LENGTH) { EMPTY_SPACE }
             val foundPositions = mutableSetOf<Int>()
             var currentIndex = 0
 
