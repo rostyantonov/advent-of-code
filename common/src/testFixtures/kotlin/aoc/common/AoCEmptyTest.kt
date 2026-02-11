@@ -35,6 +35,7 @@ abstract class AoCEmptyTest<DayType : IAoCDay<Result>, Result> : IAoCFileInput {
 
     fun getRawInput(dayInput: Any): List<String> =
         when (dayInput) {
+            is Int -> listOf(dayInput.toString())
             is String -> listOf(dayInput)
             is List<*> -> dayInput.map { it.toString() }
             else -> emptyList()
