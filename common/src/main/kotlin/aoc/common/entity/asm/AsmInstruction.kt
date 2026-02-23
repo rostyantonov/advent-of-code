@@ -92,4 +92,10 @@ sealed interface AsmInstruction {
                 1
             }
     }
+
+    data class Tgl(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int = 1
+    }
 }
