@@ -1,11 +1,11 @@
 package aoc.year2015
 
-import aoc.common.entity.asm.AsmComputer
-import aoc.common.entity.asm.AsmComputer.A_REG
-import aoc.common.entity.asm.AsmComputer.B_REG
+import aoc.common.entity.asm.AsmComputer.Companion.A_REG
+import aoc.common.entity.asm.AsmComputer.Companion.B_REG
 import aoc.common.entity.asm.AsmInstruction
 import aoc.common.entity.asm.AsmInstructionCompanion
 import aoc.common.entity.asm.AsmInstructionPatterns
+import aoc.common.entity.asm.SimpleAsmComputer
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredMultiInput
 
@@ -58,10 +58,11 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
      * What is the value in register b when the program in your puzzle input is finished executing?
      */
     override fun processPartOne(): Int =
-        AsmComputer.execute(
-            instructions = input,
-            returnRegister = B_REG,
-        )
+        SimpleAsmComputer
+            .execute(
+                instructions = input,
+                returnRegister = B_REG,
+            ).toInt()
     // result 255 for part 1
 
     /**
@@ -70,13 +71,11 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
      * if register a starts as 1 instead?
      */
     override fun processPartTwo(): Int =
-        AsmComputer.execute(
-            instructions = input,
-            registers =
-                AsmComputer.createRegisters(
-                    A_REG to 1,
-                ),
-            returnRegister = B_REG,
-        )
+        SimpleAsmComputer
+            .execute(
+                instructions = input,
+                A_REG to 1L,
+                returnRegister = B_REG,
+            ).toInt()
     // result 334 for part 2
 }
