@@ -29,6 +29,9 @@ object AsmInstructionPatterns {
     // Copy value or register to register
     val CPY_REG = Regex("(?<cmd>cpy) $VALUE_OR_REGISTER $REGISTER")
 
+    // Toggle instruction pattern
+    val TGL_REG = Regex("(?<cmd>tgl) $OFFSET")
+
     // Jump if not zero pattern
     val JNZ_REG = Regex("(?<cmd>jnz) $VALUE_OR_REGISTER $OFFSET")
 
