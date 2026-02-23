@@ -98,4 +98,11 @@ sealed interface AsmInstruction {
                 AsmComputer.NEXT
             }
     }
+
+    data class Tgl(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+    }
+    }
 }

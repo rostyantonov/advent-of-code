@@ -41,4 +41,7 @@ object AsmInstructionPatterns {
 
     // Jump if not zero pattern
     val JNZ_REG = Regex("(?<cmd>jnz) $VALUE_OR_REGISTER $OFFSET_OR_REGISTER")
+
+    // Toggle instruction pattern
+    val TGL_REG = Regex("(?<cmd>tgl) $REGISTER")
 }
