@@ -7,6 +7,8 @@ package aoc.common.entity
 object AsmComputer {
     const val A_REG = "a"
     const val B_REG = "b"
+    const val C_REG = "c"
+    const val D_REG = "d"
 
     /**
      * Creates a mutable map of registers with initial values.
