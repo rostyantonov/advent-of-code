@@ -41,5 +41,16 @@ class GridArray<Type>(
             getValue(position.getUpLeft()),
         )
 
+    fun findValuePosition(value: Type): Position {
+        gridData.forEachIndexed { yPos, listOfChars ->
+            listOfChars.forEachIndexed { xPos, curValue ->
+                if (curValue == value) {
+                    return Position(xPos, yPos)
+                }
+            }
+        }
+        return Position(-1, -1)
+    }
+
     fun clone(): GridArray<Type> = GridArray(gridData = gridData.cloneData())
 }
