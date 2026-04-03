@@ -22,6 +22,7 @@ object CharConstants {
     const val CHAR_CARET = '^'
     const val CHAR_DOT = '.'
     const val CHAR_HASHTAG = '#'
+    const val CHAR_HYPHEN = '-'
     const val CHAR_STAR = '*'
     const val CHAR_UNDERSCORE = '_'
 
