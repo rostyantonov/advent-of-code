@@ -2,9 +2,11 @@ package aoc.common.entity
 
 object CharConstants {
     const val CHAR_A_LOWERCASE = 'a'
+    const val CHAR_B_LOWERCASE = 'b'
     const val CHAR_D = 'D'
     const val CHAR_E = 'E'
     const val CHAR_F = 'F'
+    const val CHAR_F_LOWERCASE = 'f'
     const val CHAR_G = 'G'
     const val CHAR_H = 'H'
     const val CHAR_I = 'I'
