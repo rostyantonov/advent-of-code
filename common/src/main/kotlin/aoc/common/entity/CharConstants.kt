@@ -24,6 +24,9 @@ object CharConstants {
     const val CHAR_Z = 'Z'
     const val CHAR_Z_LOWERCASE = 'z'
 
+    const val CHAR_ZERO = '0'
+    const val CHAR_ONE = '1'
+
     const val OPENING_ANGLE_BRACKET = '<'
     const val CLOSING_ANGLE_BRACKET = '>'
     const val OPENING_BRACKET = '('
