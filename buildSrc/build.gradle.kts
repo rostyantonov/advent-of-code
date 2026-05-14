@@ -11,4 +11,5 @@ fun pluginMarker(plugin: Provider<PluginDependency>) =
 
 dependencies {
     implementation(pluginMarker(libs.plugins.kotlin.jvm))
+    implementation(pluginMarker(libs.plugins.ktlint.plugin))
 }
