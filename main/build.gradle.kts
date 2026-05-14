@@ -1,22 +1,9 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-}
-
-group = "advent.of.code"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+    id("aoc.kotlin-conventions")
 }
 
 dependencies {
     testImplementation(libs.kotlin.test)
-}
-
-kotlin {
-    jvmToolchain(21)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.suite)
 }
