@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.gson)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.suite)
