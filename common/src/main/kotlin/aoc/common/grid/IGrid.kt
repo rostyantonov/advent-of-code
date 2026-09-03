@@ -10,6 +10,17 @@ interface IGrid<Type> {
         col: Int,
     ): Type?
 
+    fun setValue(
+        position: Position,
+        value: Type,
+    )
+
+    fun setValue(
+        row: Int,
+        col: Int,
+        value: Type,
+    )
+
     fun getNeighbours(
         row: Int,
         col: Int,

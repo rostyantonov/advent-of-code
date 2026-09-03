@@ -3,6 +3,7 @@ package aoc.common.grid
 import aoc.common.entity.Position
 import aoc.common.util.cloneData
 import aoc.common.util.get
+import aoc.common.util.set
 
 class GridArray<Type>(
     var gridData: Array<Array<Type>>,
@@ -18,6 +19,22 @@ class GridArray<Type>(
         } catch (_: IndexOutOfBoundsException) {
             null
         }
+
+    override fun setValue(
+        position: Position,
+        value: Type,
+    ) = setValue(position.row, position.col, value)
+
+    override fun setValue(
+        row: Int,
+        col: Int,
+        value: Type,
+    ) {
+        try {
+            gridData[row, col] = value
+        } catch (_: IndexOutOfBoundsException) {
+        }
+    }
 
     override fun clone(): GridArray<Type> = GridArray(gridData = gridData.cloneData())
 }
