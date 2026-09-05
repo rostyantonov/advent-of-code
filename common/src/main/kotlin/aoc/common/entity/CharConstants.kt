@@ -8,7 +8,10 @@ object CharConstants {
     const val OPENING_BRACKET = '('
     const val CLOSING_BRACKET = ')'
 
+    const val EMPTY_SPACE = ' '
+
     const val CHAR_CARET = '^'
+    const val CHAR_UNDERSCORE = '_'
 
     const val UP_ARROW = CHAR_CARET
     const val DOWN_ARROW = CHAR_V_LOWERCASE
