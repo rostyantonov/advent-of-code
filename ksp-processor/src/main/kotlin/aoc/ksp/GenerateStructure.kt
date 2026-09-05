@@ -4,18 +4,25 @@ package aoc.ksp
  * Annotation to mark data classes that should have their IStructure companion object generated.
  *
  * The KSP processor will generate a companion object implementing IStructure<T>, IStructureCustomLine<T>,
- * or IStructureMulti<T> that:
- * - Extracts field values from regex named groups matching the field names (when customLine=false, multiStructure=false)
+ * IStructureMulti<T>, or IStructureLine<T> that:
+ * - Extracts field values from regex named groups matching the field names (when customLine=false, multiStructure=false, lineBased=false)
  * - Processes the entire line and match sequence (when customLine=true)
  * - Handles sealed classes with multiple regex patterns (when multiStructure=true)
+ * - Finds all matches in a line and returns a list (when lineBased=true)
  * - Supports Int, Long, String, Char, UShort (and nullable variants)
  *
  * @param customLine If true, generates IStructureCustomLine<T> with create(line, collection: Sequence<MatchResult>)
  *                   If false (default), generates IStructure<T> with create(collection: MatchGroupCollection)
  * @param multiStructure If true, generates IStructureMulti<T> for sealed classes with create(collection: MatchGroupCollection)
  *                       Requires a discriminator field (typically 'type' or 'cmd') to route to the correct subclass
+ * @param lineBased If true, generates IStructureLine<T> with create(collection: MatchResult) and fromLine returns List<T>
+ *                  Useful for parsing multiple occurrences of a pattern in a single line
  * @param discriminatorField The field name used to determine which sealed subclass to instantiate (default: "type")
  *                           Only used when multiStructure=true
+ * @param skipHeaderLines Number of lines to skip at the beginning of input (default: 0)
+ *                        Useful for files with header lines that don't match the data format
+ * @param skipFooterLines Number of lines to skip at the end of input (default: 0)
+ *                        Useful for files with footer lines that don't match the data format
  *
  * Example (standard):
  * ```
@@ -44,11 +51,38 @@ package aoc.ksp
  *     data class Inc(val register: String) : AsmInstruction()
  * }
  * ```
+ *
+ * Example (line-based):
+ * ```
+ * @GenerateStructure(lineBased = true)
+ * data class WalkerInstruction(
+ *     val direction: Char,
+ *     val steps: Int,
+ * )
+ * // Parses "R3, L5, R2" -> List(WalkerInstruction('R', 3), WalkerInstruction('L', 5), WalkerInstruction('R', 2))
+ * ```
+ *
+ * Example (with headers):
+ * ```
+ * @GenerateStructure(skipHeaderLines = 2)
+ * data class StorageNode(
+ *     val x: Int,
+ *     val y: Int,
+ * )
+ * // Input file:
+ * // Header line 1              <- skipped
+ * // Header line 2              <- skipped
+ * // /dev/grid/node-x0-y0       <- parsed
+ * // /dev/grid/node-x1-y0       <- parsed
+ * ```
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 annotation class GenerateStructure(
     val customLine: Boolean = false,
     val multiStructure: Boolean = false,
+    val lineBased: Boolean = false,
     val discriminatorField: String = "type",
+    val skipHeaderLines: Int = 0,
+    val skipFooterLines: Int = 0,
 )
