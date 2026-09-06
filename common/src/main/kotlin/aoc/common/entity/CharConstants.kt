@@ -33,6 +33,8 @@ object CharConstants {
     const val CLOSING_ANGLE_BRACKET = '>'
     const val OPENING_BRACKET = '('
     const val CLOSING_BRACKET = ')'
+    const val OPENING_CURLY_BRACKET = '{'
+    const val CLOSING_CURLY_BRACKET = '}'
 
     const val EMPTY_SPACE = ' '
 
