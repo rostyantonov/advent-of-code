@@ -5,6 +5,9 @@ object IntInput {
 
     fun getFirstInt(blockInput: List<String>): Int = blockInput.map { it.toInt() }.first()
 
+    fun getFirstLineIntList(blockInput: List<String>): List<Int> =
+        DIGITS_PATTERN.findAll(blockInput.first()).map { it.value.toInt() }.toList()
+
     fun getIntList(blockInput: List<String>): List<Int> = blockInput.map { it.toInt() }
 
     fun getCharsAsIntList(blockInput: List<String>): List<Int> = blockInput.first().map { it.digitToInt() }
