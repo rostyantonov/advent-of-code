@@ -14,6 +14,8 @@ import kotlin.reflect.KFunction2
  * @property builder The companion object's fromLine function (KSP-generated)
  * @property skipHeaderLines Number of lines to skip at the beginning (default: 0)
  * @property skipFooterLines Number of lines to skip at the end (default: 0)
+ * @property splitBy Optional separator that splits each line into several entities (default: null,
+ *                   meaning one entity per line). Useful for inputs like "s1,x3/4,pe/b"
  *
  * Example usage:
  * ```kotlin
@@ -32,6 +34,7 @@ class StructuredMultiInput<Structure>(
     private val builder: KFunction2<String, Array<Regex>, Structure>,
     private val skipHeaderLines: Int = 0,
     private val skipFooterLines: Int = 0,
+    private val splitBy: String? = null,
 ) {
     /**
      * Parse input lines into a list of structured entities.
@@ -45,4 +48,7 @@ class StructuredMultiInput<Structure>(
         filterLines(blockInput, skipHeaderLines, skipFooterLines).map { string ->
             builder(string, regexArray)
         }
+
+    fun getFirstLineStructInput(blockInput: List<String>): List<Structure> =
+        getStructInput(blockInput.first().split(splitBy!!))
 }
