@@ -10,8 +10,10 @@ The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to a
 
 - **Automatic Implementation Generation**: Annotate your data class and get a complete companion object
 - **Multiple Patterns**: Supports standard, line-based, custom line, and multi-structure patterns
-- **Type Support**: Supports Int, String, Char (nullable and non-nullable)
+- **Type Support**: Supports Int, String, Char (nullable and non-nullable) in every mode
 - **Field Name Mapping**: Automatically maps regex named groups to field names
+- **Subclass Aliases**: `@StructureName` lets a sealed subclass keep a readable name while
+  matching a short discriminator token in the input
 - **Extensible**: Easy to add support for additional types in `BaseEntity`
 
 ## Generation Modes
@@ -60,6 +62,32 @@ sealed class AsmInstruction {
     data class Inc(val register: String) : AsmInstruction()
 }
 ```
+
+#### Subclass Name Aliases
+
+By default the discriminator token is the subclass simple name (matched case-insensitively),
+which forces the class to be named after the raw input token. The optional `@StructureName`
+annotation decouples the two, so a class can have a readable name while still matching a short
+token in the input:
+
+```kotlin
+@GenerateStructure(multiStructure = true, discriminatorField = "type")
+sealed class DanceMove {
+    @StructureName("s")
+    data class Spin(val steps: Int) : DanceMove()
+
+    @StructureName("x")
+    data class Exchange(val from: Int, val to: Int) : DanceMove()
+
+    @StructureName("p")
+    data class Partner(val from: Char, val to: Char) : DanceMove()
+}
+// "s1" -> Spin(1), "x3/4" -> Exchange(3, 4), "pe/b" -> Partner('e', 'b')
+```
+
+`@StructureName` is entirely optional — subclasses without it keep using their class name, so
+existing entities need no changes. Values are matched case-insensitively (`"s"` and `"S"` are
+equivalent), and two subclasses resolving to the same token is a compile-time error.
 
 ## Usage
 
@@ -144,6 +172,9 @@ class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
 | Custom* | ✅ | ✅ |
 
 \* Custom types require a `@FieldConverter` annotation with a `TypeConverter` implementation.
+
+All four generation modes support the same set of types. Anything else is a compile-time error
+pointing you at `@FieldConverter` or `BaseEntity`.
 
 ## Custom Type Converters
 
@@ -258,6 +289,7 @@ typeString == "YourType" && isNullable -> "BaseEntity.getAsNullableYourType(coll
 ksp-processor/
 ├── src/main/kotlin/aoc/ksp/
 │   ├── GenerateStructure.kt          # Annotation definition
+│   ├── StructureName.kt              # Optional subclass discriminator alias
 │   ├── FieldConverter.kt             # Custom converter annotation
 │   ├── BaseEntity.kt                 # Type conversion helpers
 │   ├── TypeConverter.kt              # Custom converter interface

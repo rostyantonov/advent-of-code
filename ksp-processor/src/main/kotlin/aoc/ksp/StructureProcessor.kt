@@ -495,6 +495,10 @@ class StructureProcessor(
             return
         }
 
+        // Resolve the discriminator token for every subclass once, so the KDoc and the
+        // generated `when` cases cannot drift apart.
+        val tokenBySubclass = resolveDiscriminatorTokens(sealedSubclasses)
+
         writer.write(
             """
             |@file:Suppress("unused")
@@ -511,7 +515,9 @@ class StructureProcessor(
             | * Routes to the appropriate sealed subclass based on discriminator field '$discriminatorField'.
             | *
             | * Supported subclasses:
-            |${sealedSubclasses.joinToString("\n") { " * - ${it.simpleName.asString()}" }}
+            |${tokenBySubclass.entries.joinToString("\n") { (subclass, token) ->
+                " * - \"$token\" -> ${subclass.simpleName.asString()}"
+            }}
             | *
             | * Usage: ${className}Companion.fromLine(line, regexArray)
             | * Example:
@@ -528,7 +534,7 @@ class StructureProcessor(
             |    override fun create(collection: MatchGroupCollection): $className {
             |        val discriminator = BaseEntity.getAsString(collection, "$discriminatorField").uppercase()
             |        return when (discriminator) {
-            |${generateSealedSubclassCases(sealedSubclasses, className)}
+            |${generateSealedSubclassCases(tokenBySubclass, className)}
             |
             |            else -> {
             |                throw IllegalArgumentException("Unknown discriminator value: ${"$"}discriminator in $className creation")
@@ -541,14 +547,55 @@ class StructureProcessor(
         )
     }
 
+    /**
+     * Resolves the discriminator token for each sealed subclass.
+     *
+     * By default the subclass simple name is used, uppercased (e.g., Hlf -> HLF, Jmp -> JMP).
+     * An optional @StructureName("s") on the subclass overrides that, allowing a readable class
+     * name (Spin) to be matched by the short token found in the input ("s").
+     */
+    private fun resolveDiscriminatorTokens(subclasses: List<KSClassDeclaration>): Map<KSClassDeclaration, String> {
+        val tokens = LinkedHashMap<KSClassDeclaration, String>()
+
+        subclasses.forEach { subclass ->
+            val subclassName = subclass.simpleName.asString()
+            val alias =
+                subclass.annotations
+                    .firstOrNull { it.shortName.asString() == "StructureName" }
+                    ?.arguments
+                    ?.find { it.name?.asString() == "value" }
+                    ?.value as? String
+
+            val token =
+                if (alias != null && alias.isBlank()) {
+                    logger.error("@StructureName on $subclassName must not be blank, falling back to the class name", subclass)
+                    subclassName.uppercase()
+                } else {
+                    // Uppercase to match the runtime discriminator, which is also uppercased
+                    (alias ?: subclassName).uppercase()
+                }
+
+            val clash = tokens.entries.find { it.value == token }
+            if (clash != null) {
+                logger.error(
+                    "Discriminator token \"$token\" is already used by ${clash.key.simpleName.asString()}. " +
+                        "Give $subclassName a distinct @StructureName value.",
+                    subclass,
+                )
+            }
+
+            tokens[subclass] = token
+        }
+
+        return tokens
+    }
+
     private fun generateSealedSubclassCases(
-        subclasses: List<KSClassDeclaration>,
+        tokenBySubclass: Map<KSClassDeclaration, String>,
         className: String,
     ): String =
-        subclasses.joinToString("\n\n") { subclass ->
+        tokenBySubclass.entries.joinToString("\n\n") { (subclass, discriminatorValue) ->
             val subclassName = subclass.simpleName.asString()
-            // Map subclass name to uppercase for discriminator (e.g., Hlf -> HLF, Jmp -> JMP)
-            val discriminatorValue = subclassName.uppercase()
 
             val constructor = subclass.primaryConstructor
             val parameters = constructor?.parameters ?: emptyList()
@@ -605,8 +652,26 @@ class StructureProcessor(
                                             }
                                         }
 
+                                        "Char" -> {
+                                            if (isNullable) {
+                                                "BaseEntity.getAsNullableChar(collection, \"$paramName\")"
+                                            } else {
+                                                "BaseEntity.getAsChar(collection, \"$paramName\")"
+                                            }
+                                        }
+
                                         else -> {
-                                            "TODO(\"Add support for type $typeString\")"
+                                            logger.error(
+                                                "Unsupported type: $typeString${if (isNullable) "?" else ""} for parameter " +
+                                                    "$paramName of $subclassName. " +
+                                                    "Supported types: Int, String, Char (and nullable variants). " +
+                                                    "For custom types, use @FieldConverter annotation with a " +
+                                                    "TypeConverter implementation.",
+                                                param,
+                                            )
+                                            // Return a placeholder that will cause a compile error with a clear message
+                                            "TODO(\"Add @FieldConverter for $typeString${if (isNullable) "?" else ""} " +
+                                                "or add support in BaseEntity\")"
                                         }
                                     }
                                 }
