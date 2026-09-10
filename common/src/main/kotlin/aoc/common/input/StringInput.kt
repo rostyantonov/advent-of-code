@@ -5,6 +5,13 @@ object StringInput {
 
     fun firstString(blockInput: List<String>): String = blockInput.first()
 
+    fun getFirstLineStringList(blockInput: List<String>): List<String> =
+        STRING_PATTERN
+            .findAll(blockInput.first())
+            .map {
+                it.value
+            }.toList()
+
     fun asIs(blockInput: List<String>): List<String> = blockInput
 
     fun getStringOfStringList(blockInput: List<String>): List<List<String>> =
