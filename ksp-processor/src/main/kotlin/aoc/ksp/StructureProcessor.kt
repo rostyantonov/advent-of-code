@@ -345,6 +345,9 @@ class StructureProcessor(
             val subclassParameters =
                 sealedSubclasses.flatMap { it.primaryConstructor?.parameters.orEmpty() }
 
+            // Resolved once, so the documented mapping and the generated `when` cases cannot drift.
+            val tokenBySubclass = resolveDiscriminatorTokens(sealedSubclasses)
+
             return """
                 |package $packageName
                 |
@@ -357,11 +360,11 @@ class StructureProcessor(
                 | *
                 | * Routes to the appropriate sealed subclass based on discriminator field '$discriminatorField'.
                 | *
-                | * Discriminator mapping (uppercased group value -> subclass); renaming a subclass
-                | * changes the value it answers to:
-                |${sealedSubclasses.joinToString("\n") {
-                val name = it.simpleName.asString()
-                " * - \"${name.uppercase()}\" -> $name"
+                | * Discriminator mapping (uppercased group value -> subclass); the token is the
+                | * subclass name unless @StructureName overrides it, so a rename changes what the
+                | * subclass answers to:
+                |${tokenBySubclass.entries.joinToString("\n") { (subclass, token) ->
+                " * - \"$token\" -> ${subclass.simpleName.asString()}"
             }}
                 | *
                 | * Usage: ${className}Companion.fromLine(line, regexArray)
@@ -379,7 +382,7 @@ class StructureProcessor(
                 |    override fun create(collection: MatchGroupCollection): $className {
                 |        val discriminator = BaseEntity.getAsString(collection, "$discriminatorField").uppercase()
                 |        return when (discriminator) {
-                |${generateSealedSubclassCases(sealedSubclasses, className)}
+                |${generateSealedSubclassCases(tokenBySubclass, className)}
                 |
                 |            else -> {
                 |                throw IllegalArgumentException("Unknown discriminator value: ${"$"}discriminator in $className creation")
@@ -572,14 +575,59 @@ class StructureProcessor(
                 "            $name = $expression"
             }
 
+        /**
+         * The discriminator token each sealed subclass answers to.
+         *
+         * The default is the subclass simple name uppercased (Hlf -> HLF), which matches the runtime
+         * discriminator because [generateMultiStructureCompanion] uppercases the group value too. An
+         * optional `@StructureName("s")` overrides it, so a readable class name (Spin) can be matched
+         * by the short token the input actually carries ("s").
+         */
+        private fun resolveDiscriminatorTokens(subclasses: List<KSClassDeclaration>): Map<KSClassDeclaration, String> {
+            val tokens = LinkedHashMap<KSClassDeclaration, String>()
+
+            subclasses.forEach { subclass ->
+                val subclassName = subclass.simpleName.asString()
+                val alias =
+                    subclass.annotations
+                        .firstOrNull { it.shortName.asString() == "StructureName" }
+                        ?.arguments
+                        ?.find { it.name?.asString() == "value" }
+                        ?.value as? String
+
+                val token =
+                    if (alias != null && alias.isBlank()) {
+                        logger.error(
+                            "@StructureName on $subclassName must not be blank, falling back to the class name",
+                            subclass,
+                        )
+                        subclassName.uppercase()
+                    } else {
+                        (alias ?: subclassName).uppercase()
+                    }
+
+                // Two subclasses answering to one token is a silent wrong answer at runtime: the
+                // `when` picks the first case and the second is unreachable.
+                tokens.entries.find { it.value == token }?.let { clash ->
+                    logger.error(
+                        "Discriminator token \"$token\" is already used by ${clash.key.simpleName.asString()}. " +
+                            "Give $subclassName a distinct @StructureName value.",
+                        subclass,
+                    )
+                }
+
+                tokens[subclass] = token
+            }
+
+            return tokens
+        }
+
         private fun generateSealedSubclassCases(
-            subclasses: List<KSClassDeclaration>,
+            tokenBySubclass: Map<KSClassDeclaration, String>,
             className: String,
         ): String =
-            subclasses.joinToString("\n\n") { subclass ->
+            tokenBySubclass.entries.joinToString("\n\n") { (subclass, discriminatorValue) ->
                 val subclassName = subclass.simpleName.asString()
-                // Map subclass name to uppercase for discriminator (e.g., Hlf -> HLF, Jmp -> JMP)
-                val discriminatorValue = subclassName.uppercase()
 
                 val parameters = subclass.primaryConstructor?.parameters ?: emptyList()
 
