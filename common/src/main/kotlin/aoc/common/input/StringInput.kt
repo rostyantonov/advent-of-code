@@ -1,9 +1,16 @@
 package aoc.common.input
 
 object StringInput {
+    private val STRING_PATTERN = Regex("\\w+")
+
     fun firstString(blockInput: List<String>): String = blockInput.first()
 
     fun asIs(blockInput: List<String>): List<String> = blockInput
+
+    fun getStringOfStringList(blockInput: List<String>): List<List<String>> =
+        blockInput.map { line ->
+            STRING_PATTERN.findAll(line).map { it.value }.toList()
+        }
 
     fun filterLines(
         blockInput: List<String>,
