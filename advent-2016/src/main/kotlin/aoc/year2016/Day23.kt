@@ -1,10 +1,10 @@
 package aoc.year2016
 
-import aoc.common.entity.AsmComputer
-import aoc.common.entity.AsmComputer.A_REG
-import aoc.common.entity.AsmInstruction
-import aoc.common.entity.AsmInstructionCompanion
-import aoc.common.entity.AsmInstructionPatterns
+import aoc.common.entity.asm.AsmComputer
+import aoc.common.entity.asm.AsmComputer.A_REG
+import aoc.common.entity.asm.AsmInstruction
+import aoc.common.entity.asm.AsmInstructionCompanion
+import aoc.common.entity.asm.AsmInstructionPatterns
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredMultiInput
 
