@@ -10,7 +10,10 @@ package aoc.common.entity.asm
  */
 object AsmInstructionPatterns {
     private const val REGISTER = "(?<register>\\w{1})" // Common register pattern
+    private const val REGISTER2 = "(?<register2>\\w{1})" // Common register pattern
     private const val OFFSET_VALUE = "(?<offset>[+-]?\\d+)"
+    private const val VALUE_OR_REGISTER = "(?<valueOrRegister>-?\\d+|\\w{1})" // Common value or register pattern
+    private const val OFFSET_OR_REGISTER = "(?<offsetOrRegister>[+-]?\\d+|\\w{1})"
 
     // Increment register pattern for 4-register system (a, b, c, d)
     val INC_REG = Regex("(?<cmd>inc) $REGISTER")
@@ -29,4 +32,13 @@ object AsmInstructionPatterns {
 
     // Jump if one pattern for 2-register system
     val JIO_REG = Regex("(?<cmd>jio) $REGISTER, $OFFSET_VALUE")
+
+    // Decrement register pattern for 4-register system (a, b, c, d)
+    val DEC_REG = Regex("(?<cmd>dec) $REGISTER")
+
+    // Copy value or register to register
+    val CPY_REG = Regex("(?<cmd>cpy) $VALUE_OR_REGISTER $REGISTER2")
+
+    // Jump if not zero pattern
+    val JNZ_REG = Regex("(?<cmd>jnz) $VALUE_OR_REGISTER $OFFSET_OR_REGISTER")
 }
