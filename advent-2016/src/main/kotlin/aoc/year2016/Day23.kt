@@ -4,9 +4,9 @@ import aoc.common.entity.asm.AsmComputer.Companion.A_REG
 import aoc.common.entity.asm.AsmInstruction
 import aoc.common.entity.asm.AsmInstructionCompanion
 import aoc.common.entity.asm.AsmInstructionPatterns
-import aoc.common.entity.asm.SimpleAsmComputer
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredMultiInput
+import aoc.year2016.entity.TogglingAsmComputer
 
 class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
@@ -94,176 +94,125 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
      */
     override fun processPartTwo(): Int = doComputations(initialA = 12L)
 
-    private fun doComputations(initialA: Long): Int {
-        // The computer is only the register file here, this day still drives its own loop
-        val computer = SimpleAsmComputer(input, mapOf(A_REG to initialA))
+    private fun doComputations(initialA: Long): Int =
+        PeepholeComputer(input, mapOf(A_REG to initialA))
+            .apply { run() }[A_REG]
+            .toInt()
 
-        // Create mutable copy of instructions for toggle operations
-        val instructions = input.toMutableList()
+    /**
+     * Toggling machine that additionally recognises the two hand rolled loops the puzzle input uses
+     * to multiply and to add, and folds each of them into a single step. Without that the part two
+     * program takes minutes; the loops are only ever entered with the exact shape matched below.
+     */
+    private class PeepholeComputer(
+        program: List<AsmInstruction>,
+        initialRegisters: Map<String, Long>,
+    ) : TogglingAsmComputer(program, initialRegisters) {
+        override fun intercept(instruction: AsmInstruction): Int? =
+            when {
+                foldMultiplication() -> BLOCK_LENGTH
+                foldAddition() -> BLOCK_LENGTH
+                else -> super.intercept(instruction)
+            }
 
-        fun isRegister(operand: String): Boolean = operand.toLongOrNull() == null
+        /**
+         * Matches `cpy 0 a; cpy b c; inc a; dec c; jnz c -2; dec d; jnz d -5`, which computes
+         * `a = b * d` and leaves both counters at zero.
+         */
+        private fun foldMultiplication(): Boolean {
+            val block = blockAt(pc) ?: return false
+            val zeroing = block[0]
+            val copy = block[1]
+            val increment = block[2]
+            val innerDec = block[3]
+            val innerJump = block[4]
+            val outerDec = block[5]
+            val outerJump = block[6]
 
-        // Toggle instruction at given position
-        fun toggleInstruction(pos: Int) {
-            if (pos !in instructions.indices) return
+            val opcodesMatch =
+                zeroing is AsmInstruction.Cpy &&
+                    copy is AsmInstruction.Cpy &&
+                    increment is AsmInstruction.Inc &&
+                    innerDec is AsmInstruction.Dec &&
+                    innerJump is AsmInstruction.Jnz &&
+                    outerDec is AsmInstruction.Dec &&
+                    outerJump is AsmInstruction.Jnz
+            if (!opcodesMatch) return false
 
-            instructions[pos] =
-                when (val ins = instructions[pos]) {
-                    is AsmInstruction.Inc -> AsmInstruction.Dec(ins.register)
-                    is AsmInstruction.Dec -> AsmInstruction.Inc(ins.register)
-                    is AsmInstruction.Tgl -> AsmInstruction.Inc(ins.register)
-                    is AsmInstruction.Jnz -> AsmInstruction.Cpy(ins.valueOrRegister, ins.offsetOrRegister)
-                    is AsmInstruction.Cpy -> AsmInstruction.Jnz(ins.valueOrRegister, ins.register2)
-                    else -> ins // Other instructions unchanged
-                }
+            val destination = zeroing.register2
+            val innerCounter = innerDec.register
+            val outerCounter = outerDec.register
+            val operandsMatch =
+                zeroing.valueOrRegister == ZERO &&
+                    isRegister(copy.valueOrRegister) &&
+                    isRegister(copy.register2) &&
+                    innerJump.offsetOrRegister == INNER_LOOP_OFFSET &&
+                    outerJump.offsetOrRegister == OUTER_LOOP_OFFSET &&
+                    destination == increment.register &&
+                    innerCounter == copy.register2 &&
+                    innerCounter == innerJump.valueOrRegister &&
+                    outerCounter == outerJump.valueOrRegister
+            if (!operandsMatch) return false
+
+            this[destination] = value(copy.valueOrRegister) * value(outerCounter)
+            this[innerCounter] = 0L
+            this[outerCounter] = 0L
+            return true
         }
 
-        // Detect and optimize multiplication pattern
-        // Pattern: cpy 0 a; cpy b c; inc a; dec c; jnz c -2; dec d; jnz d -5
-        // This computes a = b * d, then sets c = 0 and d = 0
-        fun detectMultiplication(pos: Int): Boolean {
-            if (pos + 6 >= instructions.size) return false
+        /**
+         * Matches `cpy X c; jnz Y d; inc a; inc d; jnz d -2; inc c; jnz c -5`, which adds `X * Y` to
+         * the target register. The inner counter ends at its own bound rather than at zero.
+         */
+        private fun foldAddition(): Boolean {
+            val block = blockAt(pc) ?: return false
+            val outerSeed = block[0]
+            val innerSeed = block[1]
+            val increment = block[2]
+            val innerInc = block[3]
+            val innerJump = block[4]
+            val outerInc = block[5]
+            val outerJump = block[6]
 
-            val i0 = instructions[pos]
-            val i1 = instructions[pos + 1]
-            val i2 = instructions[pos + 2]
-            val i3 = instructions[pos + 3]
-            val i4 = instructions[pos + 4]
-            val i5 = instructions[pos + 5]
-            val i6 = instructions[pos + 6]
+            val opcodesMatch =
+                outerSeed is AsmInstruction.Cpy &&
+                    innerSeed is AsmInstruction.Jnz &&
+                    increment is AsmInstruction.Inc &&
+                    innerInc is AsmInstruction.Inc &&
+                    innerJump is AsmInstruction.Jnz &&
+                    outerInc is AsmInstruction.Inc &&
+                    outerJump is AsmInstruction.Jnz
+            if (!opcodesMatch) return false
 
-            // Match pattern: cpy 0 reg1; cpy reg2 reg3; inc reg1; dec reg3; jnz reg3 -2; dec reg4; jnz reg4 -5
-            if (i0 is AsmInstruction.Cpy &&
-                i0.valueOrRegister == "0" &&
-                i1 is AsmInstruction.Cpy &&
-                isRegister(i1.valueOrRegister) &&
-                isRegister(i1.register2) &&
-                i2 is AsmInstruction.Inc &&
-                i3 is AsmInstruction.Dec &&
-                i4 is AsmInstruction.Jnz &&
-                i4.offsetOrRegister == "-2" &&
-                i5 is AsmInstruction.Dec &&
-                i6 is AsmInstruction.Jnz &&
-                i6.offsetOrRegister == "-5"
-            ) {
-                val destReg = i0.register2
-                val srcReg = i1.valueOrRegister
-                val loopReg1 = i3.register
-                val loopReg2 = i5.register
+            val outerCounter = outerSeed.register2
+            val innerCounter = innerSeed.offsetOrRegister
+            val operandsMatch =
+                innerJump.offsetOrRegister == INNER_LOOP_OFFSET &&
+                    outerJump.offsetOrRegister == OUTER_LOOP_OFFSET &&
+                    innerCounter == innerInc.register &&
+                    innerCounter == innerJump.valueOrRegister &&
+                    outerCounter == outerInc.register &&
+                    outerCounter == outerJump.valueOrRegister
+            if (!operandsMatch) return false
 
-                // Verify the registers match the pattern
-                if (destReg == i2.register &&
-                    loopReg1 == i1.register2 &&
-                    loopReg1 == i4.valueOrRegister &&
-                    loopReg2 == i6.valueOrRegister
-                ) {
-                    // Perform multiplication: dest = src * loopReg2
-                    val result = computer.value(srcReg) * computer.value(loopReg2)
-                    computer[destReg] = result
-                    computer[loopReg1] = 0L
-                    computer[loopReg2] = 0L
-                    return true
-                }
-            }
-            return false
+            val outerCount = value(outerSeed.valueOrRegister)
+            val innerCount = value(innerSeed.valueOrRegister)
+            val target = increment.register
+            this[target] = this[target] + outerCount * innerCount
+            this[outerCounter] = 0L
+            this[innerCounter] = innerCount
+            return true
         }
 
-        // Detect and optimize nested addition pattern
-        // Pattern: cpy X c; jnz Y d; inc a; inc d; jnz d -2; inc c; jnz c -5
-        // This adds X * Y to a
-        fun detectAddition(pos: Int): Boolean {
-            if (pos + 6 >= instructions.size) return false
+        /** The [BLOCK_LENGTH] instructions starting at [start], or null when they run past the end. */
+        private fun blockAt(start: Int): List<AsmInstruction>? =
+            if (start + BLOCK_LENGTH > instructions.size) null else instructions.subList(start, start + BLOCK_LENGTH)
 
-            val i0 = instructions[pos]
-            val i1 = instructions[pos + 1]
-            val i2 = instructions[pos + 2]
-            val i3 = instructions[pos + 3]
-            val i4 = instructions[pos + 4]
-            val i5 = instructions[pos + 5]
-            val i6 = instructions[pos + 6]
-
-            // Match pattern: cpy X reg1; jnz Y reg2; inc reg3; inc reg2; jnz reg2 -2; inc reg1; jnz reg1 -5
-            if (i0 is AsmInstruction.Cpy &&
-                i1 is AsmInstruction.Jnz &&
-                i2 is AsmInstruction.Inc &&
-                i3 is AsmInstruction.Inc &&
-                i4 is AsmInstruction.Jnz &&
-                i4.offsetOrRegister == "-2" &&
-                i5 is AsmInstruction.Inc &&
-                i6 is AsmInstruction.Jnz &&
-                i6.offsetOrRegister == "-5"
-            ) {
-                val outerCountReg = i0.register2
-                val innerCountReg = i1.offsetOrRegister
-                val targetReg = i2.register
-
-                // Verify registers match
-                if (innerCountReg == i3.register &&
-                    innerCountReg == i4.valueOrRegister &&
-                    outerCountReg == i5.register &&
-                    outerCountReg == i6.valueOrRegister
-                ) {
-                    // Get the constant values
-                    val outerCount = computer.value(i0.valueOrRegister)
-                    val innerCount = computer.value(i1.valueOrRegister)
-
-                    // Add outer * inner to target
-                    computer[targetReg] = computer.value(targetReg) + (outerCount * innerCount)
-                    computer[outerCountReg] = 0L
-                    // innerCountReg ends up at innerCount (not 0)
-                    computer[innerCountReg] = innerCount
-                    return true
-                }
-            }
-            return false
+        companion object {
+            private const val BLOCK_LENGTH = 7
+            private const val ZERO = "0"
+            private const val INNER_LOOP_OFFSET = "-2"
+            private const val OUTER_LOOP_OFFSET = "-5"
         }
-
-        var position = 0
-        while (position in instructions.indices) {
-            // Try to detect and optimize patterns
-            if (detectMultiplication(position)) {
-                position += 7 // Skip the entire multiplication block
-                continue
-            }
-
-            if (detectAddition(position)) {
-                position += 7 // Skip the entire addition block
-                continue
-            }
-
-            val ins = instructions[position]
-
-            // Handle Tgl specially since it modifies the instruction list
-            if (ins is AsmInstruction.Tgl) {
-                val offset = computer.value(ins.register).toInt()
-                toggleInstruction(position + offset)
-                position += 1 // Tgl always advances by 1
-            } else {
-                // Validate instruction before executing (toggled instructions may be invalid)
-                val jump =
-                    when (ins) {
-                        is AsmInstruction.Cpy -> {
-                            // Only valid if target is a register
-                            if (isRegister(ins.register2)) ins.execute(computer) else 1
-                        }
-
-                        is AsmInstruction.Inc -> {
-                            // Only valid if target is a register
-                            if (isRegister(ins.register)) ins.execute(computer) else 1
-                        }
-
-                        is AsmInstruction.Dec -> {
-                            // Only valid if target is a register
-                            if (isRegister(ins.register)) ins.execute(computer) else 1
-                        }
-
-                        else -> {
-                            ins.execute(computer)
-                        }
-                    }
-                position += jump
-            }
-        }
-        return computer[A_REG].toInt()
     }
 }
