@@ -45,11 +45,11 @@ object AsmInstructionPatterns {
     // Toggle instruction pattern
     val TGL_REG = Regex("(?<cmd>tgl) $REGISTER")
 
-    // Output instruction pattern
-    val OUT_REG = Regex("(?<cmd>out) $REGISTER")
+    // Output instruction pattern, the operand may be a literal
+    val OUT_REG = Regex("(?<cmd>out) $VALUE_OR_REGISTER")
 
-    // Sound register pattern
-    val SND_REG = Regex("(?<cmd>snd) $REGISTER")
+    // Sound pattern, the operand may be a literal
+    val SND_REG = Regex("(?<cmd>snd) $VALUE_OR_REGISTER")
 
     // Set register pattern
     val SET_REG = Regex("(?<cmd>set) $REGISTER $VALUE_OR_REGISTER")

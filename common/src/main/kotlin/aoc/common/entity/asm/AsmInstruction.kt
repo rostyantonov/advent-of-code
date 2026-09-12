@@ -108,18 +108,24 @@ sealed interface AsmInstruction {
         }
     }
 
-    /** Emits a value; only the days that own an output channel can run it. */
+    /** Emits a value on the output channel of the machine. */
     data class Out(
-        val register: String,
+        val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+        override fun execute(computer: AsmComputer): Int {
+            computer.send(computer.value(valueOrRegister))
+            return AsmComputer.NEXT
+        }
     }
 
-    /** Plays a sound; only the days that own a sound card can run it. */
+    /** Plays a sound, or sends a message to the partner program, depending on the machine. */
     data class Snd(
-        val register: String,
+        val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+        override fun execute(computer: AsmComputer): Int {
+            computer.send(computer.value(valueOrRegister))
+            return AsmComputer.NEXT
+        }
     }
 
     data class Set(
