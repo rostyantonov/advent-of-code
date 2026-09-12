@@ -2,6 +2,8 @@ package aoc.common.entity.asm
 
 /**
  * Plain machine for programs that only move numbers between registers and jump around.
+ * Any input or output opcode is rejected by the inherited hooks, which keeps a typo in the pattern
+ * list of a day from silently producing a wrong answer.
  */
 class SimpleAsmComputer(
     program: List<AsmInstruction>,
