@@ -6,11 +6,16 @@ import aoc.ksp.GenerateStructure
  * Union of every opcode used by the assembunny (2015/2016) and Duet (2017) machines.
  *
  * An instruction only describes what it does to the [AsmComputer] it runs on and returns the
- * program counter delta.
+ * program counter delta. Opcodes with side effects outside the register file - `snd`, `rcv`, `out`,
+ * `tgl` - delegate to the matching hook so that each puzzle can give them its own meaning without
+ * touching the instruction set.
  */
 @GenerateStructure(multiStructure = true, discriminatorField = "cmd")
 sealed interface AsmInstruction {
-    /** Runs this instruction against [computer] and returns how far the program counter should move. */
+    /**
+     * Runs this instruction against [computer] and returns how far the program counter should move.
+     * A delta of 0 means the instruction could not run and should be retried.
+     */
     fun execute(computer: AsmComputer): Int
 
     data class Inc(
@@ -168,19 +173,19 @@ sealed interface AsmInstruction {
         }
     }
 
-    /** Recovers the last sound; only the days that own a sound card can run it. */
+    /** Recovers the last sound, or waits for a message; the machine decides which and how far to move. */
     data class Rcv(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+        override fun execute(computer: AsmComputer): Int = computer.recover(register)
     }
 
     data class Jgz(
-        val register: String,
+        val valueOrRegister: String,
         val offsetOrRegister: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int =
-            if (computer[register] > 0L) {
+            if (computer.value(valueOrRegister) > 0L) {
                 computer.value(offsetOrRegister).toInt()
             } else {
                 AsmComputer.NEXT

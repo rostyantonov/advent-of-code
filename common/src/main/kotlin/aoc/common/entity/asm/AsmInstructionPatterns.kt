@@ -48,7 +48,7 @@ object AsmInstructionPatterns {
     // Output instruction pattern, the operand may be a literal
     val OUT_REG = Regex("(?<cmd>out) $VALUE_OR_REGISTER")
 
-    // Sound pattern, the operand may be a literal
+    // Sound pattern, the operand may be a literal (the 2017 day 18 part two example sends "snd 1")
     val SND_REG = Regex("(?<cmd>snd) $VALUE_OR_REGISTER")
 
     // Set register pattern
@@ -66,6 +66,6 @@ object AsmInstructionPatterns {
     // Recover register pattern
     val RCV_REG = Regex("(?<cmd>rcv) $REGISTER")
 
-    // Jump if greater than zero register pattern
-    val JGZ_REG = Regex("(?<cmd>jgz) $REGISTER $OFFSET_OR_REGISTER")
+    // Jump if greater than zero, the condition operand may be a literal (real input holds "jgz 1 3")
+    val JGZ_REG = Regex("(?<cmd>jgz) $VALUE_OR_REGISTER $OFFSET_OR_REGISTER")
 }
