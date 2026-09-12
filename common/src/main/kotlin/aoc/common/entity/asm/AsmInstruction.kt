@@ -3,6 +3,8 @@ package aoc.common.entity.asm
 import aoc.ksp.GenerateStructure
 
 /**
+ * Union of every opcode used by the assembunny (2015/2016) and Duet (2017) machines.
+ *
  * An instruction only describes what it does to the [AsmComputer] it runs on and returns the
  * program counter delta.
  */
@@ -99,15 +101,83 @@ sealed interface AsmInstruction {
             }
     }
 
+    /** Rewrites another instruction; only the days that know the rewrite rules can run it. */
     data class Tgl(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 
+    /** Emits a value; only the days that own an output channel can run it. */
     data class Out(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+    }
+
+    /** Plays a sound; only the days that own a sound card can run it. */
+    data class Snd(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+    }
+
+    data class Set(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer.value(valueOrRegister)
+            return AsmComputer.NEXT
+        }
+    }
+
+    data class Add(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] + computer.value(valueOrRegister)
+            return AsmComputer.NEXT
+        }
+    }
+
+    data class Mul(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] * computer.value(valueOrRegister)
+            return AsmComputer.NEXT
+        }
+    }
+
+    data class Mod(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] % computer.value(valueOrRegister)
+            return AsmComputer.NEXT
+        }
+    }
+
+    /** Recovers the last sound; only the days that own a sound card can run it. */
+    data class Rcv(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+    }
+
+    data class Jgz(
+        val register: String,
+        val offsetOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int =
+            if (computer[register] > 0L) {
+                computer.value(offsetOrRegister).toInt()
+            } else {
+                AsmComputer.NEXT
+            }
     }
 }
