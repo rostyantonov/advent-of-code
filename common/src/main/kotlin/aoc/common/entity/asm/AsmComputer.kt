@@ -67,5 +67,6 @@ abstract class AsmComputer(
 
         const val A_REG = "a"
         const val B_REG = "b"
+        const val C_REG = "c"
     }
 }

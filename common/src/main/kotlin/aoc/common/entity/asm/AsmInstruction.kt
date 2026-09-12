@@ -67,4 +67,35 @@ sealed interface AsmInstruction {
                 AsmComputer.NEXT
             }
     }
+
+    data class Dec(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] - 1L
+            return AsmComputer.NEXT
+        }
+    }
+
+    data class Cpy(
+        val valueOrRegister: String,
+        val register2: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int {
+            computer[register2] = computer.value(valueOrRegister)
+            return AsmComputer.NEXT
+        }
+    }
+
+    data class Jnz(
+        val valueOrRegister: String,
+        val offsetOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int =
+            if (computer.value(valueOrRegister) != 0L) {
+                computer.value(offsetOrRegister).toInt()
+            } else {
+                AsmComputer.NEXT
+            }
+    }
 }
