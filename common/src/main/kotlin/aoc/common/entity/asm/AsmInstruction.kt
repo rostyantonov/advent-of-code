@@ -98,11 +98,14 @@ sealed interface AsmInstruction {
             }
     }
 
-    /** Rewrites another instruction; only the days that know the rewrite rules can run it. */
+    /** Rewrites another instruction; the rewrite rules belong to the machine. */
     data class Tgl(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
+        override fun execute(computer: AsmComputer): Int {
+            computer.toggle(computer.value(register).toInt())
+            return AsmComputer.NEXT
+        }
     }
 
     /** Emits a value; only the days that own an output channel can run it. */
