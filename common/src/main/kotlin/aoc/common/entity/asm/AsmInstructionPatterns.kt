@@ -47,4 +47,25 @@ object AsmInstructionPatterns {
 
     // Output instruction pattern
     val OUT_REG = Regex("(?<cmd>out) $REGISTER")
+
+    // Sound register pattern
+    val SND_REG = Regex("(?<cmd>snd) $REGISTER")
+
+    // Set register pattern
+    val SET_REG = Regex("(?<cmd>set) $REGISTER $VALUE_OR_REGISTER")
+
+    // Add register pattern
+    val ADD_REG = Regex("(?<cmd>add) $REGISTER $VALUE_OR_REGISTER")
+
+    // Multiply register pattern
+    val MUL_REG = Regex("(?<cmd>mul) $REGISTER $VALUE_OR_REGISTER")
+
+    // Modulo register pattern
+    val MOD_REG = Regex("(?<cmd>mod) $REGISTER $VALUE_OR_REGISTER")
+
+    // Recover register pattern
+    val RCV_REG = Regex("(?<cmd>rcv) $REGISTER")
+
+    // Jump if greater than zero register pattern
+    val JGZ_REG = Regex("(?<cmd>jgz) $REGISTER $OFFSET_OR_REGISTER")
 }

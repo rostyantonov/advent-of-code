@@ -104,4 +104,68 @@ sealed interface AsmInstruction {
     ) : AsmInstruction {
         override fun execute(registers: MutableMap<String, Int>): Int = 1
     }
+
+    data class Snd(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int = 1
+    }
+
+    data class Set(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int {
+            registers[register] = getValueOrRegister(valueOrRegister, registers)
+            return 1
+        }
+    }
+
+    data class Add(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int {
+            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::plus)
+            return 1
+        }
+    }
+
+    data class Mul(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int {
+            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::times)
+            return 1
+        }
+    }
+
+    data class Mod(
+        val register: String,
+        val valueOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int {
+            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::rem)
+            return 1
+        }
+    }
+
+    data class Rcv(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int = 1
+    }
+
+    data class Jgz(
+        val register: String,
+        val offsetOrRegister: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int =
+            if (registers.getOrPut(register) { 0 } > 0) {
+                getValueOrRegister(offsetOrRegister, registers)
+            } else {
+                1
+            }
+    }
 }
