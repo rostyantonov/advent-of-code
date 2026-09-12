@@ -98,4 +98,10 @@ sealed interface AsmInstruction {
     ) : AsmInstruction {
         override fun execute(registers: MutableMap<String, Int>): Int = 1
     }
+
+    data class Out(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(registers: MutableMap<String, Int>): Int = 1
+    }
 }

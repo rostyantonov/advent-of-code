@@ -44,4 +44,7 @@ object AsmInstructionPatterns {
 
     // Toggle instruction pattern
     val TGL_REG = Regex("(?<cmd>tgl) $REGISTER")
+
+    // Output instruction pattern
+    val OUT_REG = Regex("(?<cmd>out) $REGISTER")
 }
