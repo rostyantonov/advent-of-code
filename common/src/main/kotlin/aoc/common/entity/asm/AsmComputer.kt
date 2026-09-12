@@ -1,61 +1,72 @@
 package aoc.common.entity.asm
 
 /**
- * Utility object for executing assembunny computer instructions.
- * Provides common functions for register management and program execution.
+ * Base of every assembunny/Duet style virtual machine in this repository.
+ *
+ * The class owns the parts that never change between puzzles: the register file, the program
+ * counter, the fetch/execute loop and the halting rules. Everything a single puzzle invents on top
+ * of the shared instruction set is added by a subclass instead of by copying the loop.
+ *
+ * Instructions report a program counter delta from [AsmInstruction.execute].
+ *
+ * @param program instructions to run, copied so that self modifying programs cannot corrupt the input
+ * @param initialRegisters register values to seed before the first step, everything else starts at 0
  */
-object AsmComputer {
-    const val A_REG = "a"
-    const val B_REG = "b"
-    const val C_REG = "c"
+abstract class AsmComputer(
+    program: List<AsmInstruction>,
+    initialRegisters: Map<String, Long> = emptyMap(),
+) {
+    protected val instructions: MutableList<AsmInstruction> = program.toMutableList()
+
+    val registers: MutableMap<String, Long> = initialRegisters.toMutableMap()
+
+    /** Program counter, an index into [instructions]. */
+    var pc: Int = 0
+        protected set
+
+    /** Set once the program runs off either end, or when a puzzle specific stop condition hits. */
+    var halted: Boolean = false
+        protected set
+
+    /** True while the machine can make progress on its own. */
+    val running: Boolean
+        get() = !halted && pc in instructions.indices
 
     /**
-     * Creates a mutable map of registers with initial values.
-     *
-     * @param pairs Variable number of register name to initial value pairs
-     * @return Mutable map of registers
-     *
+     * Resolves an operand that is either a literal number or a register name.
+     * Registers that were never written default to 0.
      */
-    fun createRegisters(vararg pairs: Pair<String, Int>): MutableMap<String, Int> = mutableMapOf(*pairs)
+    fun value(operand: String): Long = operand.toLongOrNull() ?: registers.getOrPut(operand) { 0L }
 
-    /**
-     * Executes a list of assembunny instructions and returns the value of the specified register.
-     *
-     * @param instructions List of instructions to execute
-     * @param registers Mutable map of registers (modified during execution)
-     * @param returnRegister Name of the register whose value should be returned
-     * @return Final value of the specified register
-     */
-    fun execute(
-        instructions: List<AsmInstruction>,
-        registers: MutableMap<String, Int> = mutableMapOf(),
-        returnRegister: String,
-    ): Int {
-        var position = 0
-        while (position in instructions.indices) {
-            position += instructions[position].execute(registers)
-        }
-        return registers[returnRegister] ?: 0
+    operator fun get(register: String): Long = registers[register] ?: 0L
+
+    operator fun set(
+        register: String,
+        newValue: Long,
+    ) {
+        registers[register] = newValue
     }
 
-    /**
-     * Gets the integer value from either a numeric string or a register name.
-     *
-     * @param value String that is either a number or a register name
-     * @param registers Map of register values
-     * @return Integer value (the number itself or the register's value, defaulting to 0)
-     */
-    fun getValue(
-        value: String,
-        registers: MutableMap<String, Int>,
-    ): Int = value.toIntOrNull() ?: registers.getOrPut(value, { 0 })
+    /** Executes a single instruction, unless the machine already stopped. */
+    fun step() {
+        if (!running) return
+        pc += instructions[pc].execute(this)
+        if (pc !in instructions.indices) halted = true
+    }
 
-    /**
-     * Checks if a string represents a valid register name.
-     *
-     * @param value String to check
-     * @param registers Map of registers
-     * @return true if the value is a register name, false otherwise
-     */
-    fun isRegister(value: String): Boolean = value.toIntOrNull() == null
+    /** Steps until the machine stops making progress. */
+    fun run() {
+        while (running) {
+            step()
+        }
+    }
+
+    companion object {
+        /** Program counter delta of an instruction that simply falls through to the next one. */
+        const val NEXT = 1
+
+        const val A_REG = "a"
+        const val B_REG = "b"
+        const val C_REG = "c"
+    }
 }

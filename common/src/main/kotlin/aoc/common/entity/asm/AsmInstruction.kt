@@ -2,72 +2,77 @@ package aoc.common.entity.asm
 
 import aoc.ksp.GenerateStructure
 
+/**
+ * Union of every opcode used by the assembunny (2015/2016) and Duet (2017) machines.
+ *
+ * An instruction only describes what it does to the [AsmComputer] it runs on and returns the
+ * program counter delta.
+ */
 @GenerateStructure(multiStructure = true, discriminatorField = "cmd")
 sealed interface AsmInstruction {
-    fun execute(registers: MutableMap<String, Int>): Int
-
-    fun getValueOrRegister(
-        valueOrRegister: String,
-        registers: MutableMap<String, Int>,
-    ): Int =
-        valueOrRegister.toIntOrNull()
-            ?: registers.getOrPut(valueOrRegister) { 0 }
+    /** Runs this instruction against [computer] and returns how far the program counter should move. */
+    fun execute(computer: AsmComputer): Int
 
     data class Inc(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, 1, Int::plus)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] + 1L
+            return AsmComputer.NEXT
         }
     }
 
     data class Hlf(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, 2, Int::div)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] / 2L
+            return AsmComputer.NEXT
         }
     }
 
     data class Tpl(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, 3, Int::times)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] * 3L
+            return AsmComputer.NEXT
         }
     }
 
     data class Jmp(
         val offset: Int,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int = offset
+        override fun execute(computer: AsmComputer): Int = offset
     }
 
     data class Jie(
         val register: String,
         val offset: Int,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int =
-            if (registers.getOrPut(register) { 0 } % 2 == 0) offset else 1
+        override fun execute(computer: AsmComputer): Int =
+            if (computer[register] % 2L ==
+                0L
+            ) {
+                offset
+            } else {
+                AsmComputer.NEXT
+            }
     }
 
     data class Jio(
         val register: String,
         val offset: Int,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int =
-            if (registers.getOrPut(register) { 0 } == 1) offset else 1
+        override fun execute(computer: AsmComputer): Int = if (computer[register] == 1L) offset else AsmComputer.NEXT
     }
 
     data class Dec(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, 1, Int::minus)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] - 1L
+            return AsmComputer.NEXT
         }
     }
 
@@ -75,9 +80,9 @@ sealed interface AsmInstruction {
         val valueOrRegister: String,
         val register2: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers[register2] = getValueOrRegister(valueOrRegister, registers)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register2] = computer.value(valueOrRegister)
+            return AsmComputer.NEXT
         }
     }
 
@@ -85,39 +90,42 @@ sealed interface AsmInstruction {
         val valueOrRegister: String,
         val offsetOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int =
-            if (getValueOrRegister(valueOrRegister, registers) != 0) {
-                getValueOrRegister(offsetOrRegister, registers)
+        override fun execute(computer: AsmComputer): Int =
+            if (computer.value(valueOrRegister) != 0L) {
+                computer.value(offsetOrRegister).toInt()
             } else {
-                1
+                AsmComputer.NEXT
             }
     }
 
+    /** Rewrites another instruction; only the days that know the rewrite rules can run it. */
     data class Tgl(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int = 1
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 
+    /** Emits a value; only the days that own an output channel can run it. */
     data class Out(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int = 1
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 
+    /** Plays a sound; only the days that own a sound card can run it. */
     data class Snd(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int = 1
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 
     data class Set(
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers[register] = getValueOrRegister(valueOrRegister, registers)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer.value(valueOrRegister)
+            return AsmComputer.NEXT
         }
     }
 
@@ -125,9 +133,9 @@ sealed interface AsmInstruction {
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::plus)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] + computer.value(valueOrRegister)
+            return AsmComputer.NEXT
         }
     }
 
@@ -135,9 +143,9 @@ sealed interface AsmInstruction {
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::times)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] * computer.value(valueOrRegister)
+            return AsmComputer.NEXT
         }
     }
 
@@ -145,27 +153,28 @@ sealed interface AsmInstruction {
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int {
-            registers.merge(register, getValueOrRegister(valueOrRegister, registers), Int::rem)
-            return 1
+        override fun execute(computer: AsmComputer): Int {
+            computer[register] = computer[register] % computer.value(valueOrRegister)
+            return AsmComputer.NEXT
         }
     }
 
+    /** Recovers the last sound; only the days that own a sound card can run it. */
     data class Rcv(
         val register: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int = 1
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 
     data class Jgz(
         val register: String,
         val offsetOrRegister: String,
     ) : AsmInstruction {
-        override fun execute(registers: MutableMap<String, Int>): Int =
-            if (registers.getOrPut(register) { 0 } > 0) {
-                getValueOrRegister(offsetOrRegister, registers)
+        override fun execute(computer: AsmComputer): Int =
+            if (computer[register] > 0L) {
+                computer.value(offsetOrRegister).toInt()
             } else {
-                1
+                AsmComputer.NEXT
             }
     }
 }
