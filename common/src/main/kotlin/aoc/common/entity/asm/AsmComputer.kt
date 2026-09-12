@@ -1,5 +1,7 @@
 package aoc.common.entity.asm
 
+import aoc.common.exception.UnsupportedTypeException
+
 /**
  * Base of every assembunny/Duet style virtual machine in this repository.
  *
@@ -47,10 +49,23 @@ abstract class AsmComputer(
         registers[register] = newValue
     }
 
+    /**
+     * Handles `tgl`, which rewrites the instruction [offset] positions away from the current [pc].
+     */
+    open fun toggle(offset: Int): Unit = throw UnsupportedTypeException("$OPCODE_PREFIX 'tgl'")
+
+    /**
+     * Hook that runs before [instruction] is executed. Returning a program counter delta replaces
+     * the execution entirely, which is how toggled-into-invalid instructions are skipped and how a
+     * peephole optimisation folds a whole loop into one step. Returning null runs it normally.
+     */
+    protected open fun intercept(instruction: AsmInstruction): Int? = null
+
     /** Executes a single instruction, unless the machine already stopped. */
     fun step() {
         if (!running) return
-        pc += instructions[pc].execute(this)
+        val instruction = instructions[pc]
+        pc += intercept(instruction) ?: instruction.execute(this)
         if (pc !in instructions.indices) halted = true
     }
 
@@ -68,5 +83,7 @@ abstract class AsmComputer(
         const val A_REG = "a"
         const val B_REG = "b"
         const val C_REG = "c"
+
+        private const val OPCODE_PREFIX = "This computer does not support"
     }
 }
