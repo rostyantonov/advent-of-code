@@ -2,12 +2,11 @@ package aoc.year2016
 
 import aoc.common.entity.asm.AsmComputer.Companion.A_REG
 import aoc.common.entity.asm.AsmInstruction
-import aoc.common.entity.asm.AsmInstruction.Out
 import aoc.common.entity.asm.AsmInstructionCompanion
 import aoc.common.entity.asm.AsmInstructionPatterns
-import aoc.common.entity.asm.SimpleAsmComputer
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredMultiInput
+import aoc.year2016.entity.ClockSignalComputer
 
 class Day25 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
@@ -45,31 +44,13 @@ class Day25 : AoCFileInput<List<AsmInstruction>, Int>() {
     override fun processPartTwo(): Int = -1
     // no task two
 
-    private fun producesClockSignal(
-        initialA: Int,
-        requiredSignals: Int = 20,
-        maxSteps: Int = 1_000_000,
-    ): Boolean {
-        val computer = SimpleAsmComputer(input, mapOf(A_REG to initialA.toLong()))
-        val instructions = input
-        var position = 0
-        var expected = 0L
-        var produced = 0
-        var steps = 0
+    private fun producesClockSignal(initialA: Int): Boolean =
+        ClockSignalComputer(input, mapOf(A_REG to initialA.toLong()))
+            .apply { run(MAX_STEPS) }
+            .valid
 
-        while (position in instructions.indices && steps < maxSteps && produced < requiredSignals) {
-            val instruction = instructions[position]
-            if (instruction is Out) {
-                val signal = computer.value(instruction.valueOrRegister)
-                if (signal != expected) return false
-                expected = 1L - expected
-                produced++
-                position += 1
-            } else {
-                position += instruction.execute(computer)
-            }
-            steps++
-        }
-        return produced >= requiredSignals
+    companion object {
+        /** Guard for seed values whose program never emits, so the brute force cannot hang. */
+        private const val MAX_STEPS = 1_000_000L
     }
 }
