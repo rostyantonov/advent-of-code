@@ -30,6 +30,10 @@ abstract class AsmComputer(
     var halted: Boolean = false
         protected set
 
+    /** Amount of instructions executed so far, useful for step limits and opcode counting. */
+    var executed: Long = 0L
+        private set
+
     /** True while the machine can make progress on its own. */
     val running: Boolean
         get() = !halted && pc in instructions.indices
@@ -49,6 +53,15 @@ abstract class AsmComputer(
         registers[register] = newValue
     }
 
+    protected fun halt() {
+        halted = true
+    }
+
+    /**
+     * Handles `snd` and `out`. Machines without an output channel reject the opcode.
+     */
+    open fun send(sent: Long): Unit = throw UnsupportedTypeException("$OPCODE_PREFIX 'snd'/'out'")
+
     /**
      * Handles `tgl`, which rewrites the instruction [offset] positions away from the current [pc].
      */
@@ -65,13 +78,19 @@ abstract class AsmComputer(
     fun step() {
         if (!running) return
         val instruction = instructions[pc]
-        pc += intercept(instruction) ?: instruction.execute(this)
-        if (pc !in instructions.indices) halted = true
+        val delta = intercept(instruction) ?: instruction.execute(this)
+        executed++
+        pc += delta
+        if (pc !in instructions.indices) halt()
     }
 
-    /** Steps until the machine stops making progress. */
-    fun run() {
-        while (running) {
+    /**
+     * Steps until the machine stops making progress, or until [maxSteps] instructions ran.
+     * The step limit guards puzzles that brute force seed values over programs that may never end.
+     */
+    fun run(maxSteps: Long = Long.MAX_VALUE) {
+        var steps = 0L
+        while (running && steps++ < maxSteps) {
             step()
         }
     }
