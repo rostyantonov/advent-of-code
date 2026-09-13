@@ -104,5 +104,10 @@ sealed interface AsmInstruction {
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
+
+    data class Out(
+        val register: String,
+    ) : AsmInstruction {
+        override fun execute(computer: AsmComputer): Int = AsmComputer.NEXT
     }
 }
