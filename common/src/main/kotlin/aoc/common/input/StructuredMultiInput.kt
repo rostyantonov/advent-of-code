@@ -1,6 +1,7 @@
 package aoc.common.input
 
 import aoc.common.input.StringInput.filterLines
+import aoc.ksp.IStructureMulti
 import kotlin.reflect.KFunction2
 
 /**
@@ -45,4 +46,21 @@ class StructuredMultiInput<Structure>(
         filterLines(blockInput, skipHeaderLines, skipFooterLines).map { string ->
             builder(string, regexArray)
         }
+
+    companion object {
+        /**
+         * Takes the generated companion itself, so the skip counts declared on the entity through
+         * `@GenerateStructure` travel with it instead of being repeated at every call site.
+         */
+        fun <Type : Any> of(
+            regexArray: Array<Regex>,
+            structure: IStructureMulti<Type>,
+        ): StructuredMultiInput<Type> =
+            StructuredMultiInput(
+                regexArray,
+                structure::fromLine,
+                structure.skipHeaderLines,
+                structure.skipFooterLines,
+            )
+    }
 }

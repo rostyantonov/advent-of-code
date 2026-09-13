@@ -12,6 +12,7 @@ The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to a
 - **Multiple Patterns**: Supports standard, line-based, custom line, and multi-structure patterns
 - **Type Support**: Supports Int, String, Char (nullable and non-nullable)
 - **Field Name Mapping**: Automatically maps regex named groups to field names
+- **Declared Input Window**: `skipHeaderLines`/`skipFooterLines` travel with the entity
 - **Extensible**: Easy to add support for additional types in `BaseEntity`
 
 ## Generation Modes
@@ -39,14 +40,40 @@ data class WalkerInstruction(
 // Parses "R3, L5, R2" -> List(WalkerInstruction('R', 3), WalkerInstruction('L', 5), WalkerInstruction('R', 2))
 ```
 
+A line with no match yields an empty list — for inputs such as 2016 Day09 that is a valid answer, not
+a parse failure.
+
+### Match Sources (@FromMatch)
+Parameters are read from the regex named group sharing their name. A parameter that has no such group
+declares its source explicitly:
+
+| `MatchPart` | Valid with | Parameter type | Value |
+|-------------|-----------|----------------|-------|
+| `LINE` | `customLine = true` | `String` | The whole input line |
+| `ALL_MATCHES` | `customLine = true` | `List<T>` | Every match, each passed to `T(String)` |
+| `RANGE` | `lineBased = true` | `IntRange` | The match's own span within the line |
+
+```kotlin
+@GenerateStructure(lineBased = true)
+data class Decompress(
+    @FromMatch(MatchPart.RANGE) val range: IntRange,
+    val num: Int,
+    val times: Int,
+)
+```
+
+Using a part outside its mode, or on the wrong parameter type, is a processor error rather than a
+`TODO(...)` in the generated file.
+
 ### Custom Line Mode (IStructureCustomLine)
-Processes the entire line and all match results, allowing for custom parsing logic.
+Processes the entire line and all match results, allowing for custom parsing logic. Neither source is
+a named group, so every parameter says where it comes from with `@FromMatch` (see Match Sources above).
 
 ```kotlin
 @GenerateStructure(customLine = true)
 data class Molecule(
-    val stringValue: String,
-    val atoms: List<Atom>,
+    @FromMatch(MatchPart.LINE) val stringValue: String,
+    @FromMatch(MatchPart.ALL_MATCHES) val atoms: List<Atom>,
 )
 ```
 
@@ -133,6 +160,23 @@ class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
     }
 }
 ```
+
+### Skipping Header and Footer Lines
+
+Declare the trimming on the entity and pass the companion itself; `StructuredInput.of` and
+`StructuredMultiInput.of` read the counts off the generated companion, so no call site repeats them.
+
+```kotlin
+@GenerateStructure(skipHeaderLines = 2)
+data class StorageNode(val x: Int, val y: Int, val size: Int, val used: Int, val avail: Int)
+
+// Day22
+StructuredInput.of(regex = Regex("..."), structure = StorageNodeCompanion)::getStructInput
+```
+
+The processor emits `override val skipHeaderLines` / `skipFooterLines` only for non-zero values. The
+`StructuredInput(regex, builder, skipHeaderLines, skipFooterLines)` constructor stays available for
+trimming that belongs to one puzzle rather than to the entity.
 
 ## Supported Types
 
@@ -268,6 +312,8 @@ ksp-annotations/                      # runtime API, no KSP dependency
     ├── FieldConverter.kt             # Custom converter annotation
     ├── TypeConverter.kt              # Custom converter interface
     ├── BaseEntity.kt                 # Type conversion helpers
+    ├── FromMatch.kt                  # Non-group match sources (LINE/RANGE/ALL_MATCHES)
+    ├── IStructureSkips.kt            # skipHeaderLines/skipFooterLines carried by every companion
     ├── IStructure.kt                 # Base interface
     ├── IStructureLine.kt             # Line-based interface (findAll -> List<T>)
     ├── IStructureCustomLine.kt       # Custom line interface

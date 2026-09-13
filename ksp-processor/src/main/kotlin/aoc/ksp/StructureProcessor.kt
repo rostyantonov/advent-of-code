@@ -14,7 +14,6 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.validate
-import java.io.Writer
 
 class StructureProcessor(
     private val codeGenerator: CodeGenerator,
@@ -78,6 +77,54 @@ class StructureProcessor(
                     ?.arguments
                     ?.find { it.name?.asString() == "discriminatorField" }
                     ?.value as? String ?: "type"
+            val skipHeaderLines =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "skipHeaderLines" }
+                    ?.value as? Int ?: 0
+            val skipFooterLines =
+                generateAnnotation
+                    ?.arguments
+                    ?.find { it.name?.asString() == "skipFooterLines" }
+                    ?.value as? Int ?: 0
+
+            // The generation modes are mutually exclusive, but the dispatch below is a `when`, so
+            // without this check a class asking for two of them would silently get whichever branch
+            // happens to come first.
+            val requestedModes =
+                listOf("customLine" to isCustomLine, "multiStructure" to isMultiStructure, "lineBased" to isLineBased)
+                    .filter { (_, enabled) -> enabled }
+                    .map { (name, _) -> name }
+            if (requestedModes.size > 1) {
+                logger.error(
+                    "@GenerateStructure: ${requestedModes.joinToString(" and ")} are mutually exclusive on $className",
+                    classDeclaration,
+                )
+                return
+            }
+
+            if (isMultiStructure && discriminatorField.isBlank()) {
+                logger.error(
+                    "@GenerateStructure(multiStructure=true) needs a non-blank discriminatorField on $className",
+                    classDeclaration,
+                )
+                return
+            }
+            if (!isMultiStructure && discriminatorField != "type") {
+                logger.warn(
+                    "@GenerateStructure: discriminatorField is only used when multiStructure=true, " +
+                        "so it has no effect on $className",
+                    classDeclaration,
+                )
+            }
+
+            if (skipHeaderLines < 0 || skipFooterLines < 0) {
+                logger.error(
+                    "@GenerateStructure: skipHeaderLines/skipFooterLines cannot be negative on $className",
+                    classDeclaration,
+                )
+                return
+            }
 
             // For non-multiStructure classes, check for primary constructor parameters
             val parameters =
@@ -97,6 +144,18 @@ class StructureProcessor(
                 } else {
                     emptyList()
                 }
+
+            // @FromMatch describes sources only the customLine and lineBased templates can read; the
+            // standard and multi templates would silently ignore it.
+            if (!isCustomLine && !isLineBased) {
+                parameters.filter { matchPartOf(it) != null }.forEach { param ->
+                    logger.error(
+                        "@FromMatch on '${param.name?.asString()}' requires " +
+                            "@GenerateStructure(customLine=true) or (lineBased=true)",
+                        param,
+                    )
+                }
+            }
 
             // The sealed subclasses have to be resolved before the file is created: they contribute
             // both to the generated body and to the set of source files it depends on.
@@ -128,31 +187,27 @@ class StructureProcessor(
                     fileName = "${className}Companion",
                 )
 
-            file.bufferedWriter().use { writer ->
+            val skips = skipOverrides(skipHeaderLines, skipFooterLines)
+
+            val companionSource =
                 when {
-                    isMultiStructure -> {
+                    isMultiStructure ->
                         generateMultiStructureCompanion(
-                            writer,
                             packageName,
                             className,
                             sealedSubclasses,
                             discriminatorField,
+                            skips,
                         )
-                    }
 
-                    isCustomLine -> {
-                        generateCustomLineCompanion(writer, packageName, className, parameters)
-                    }
+                    isCustomLine -> generateCustomLineCompanion(packageName, className, parameters, skips)
 
-                    isLineBased -> {
-                        generateLineBasedCompanion(writer, packageName, className, parameters)
-                    }
+                    isLineBased -> generateLineBasedCompanion(packageName, className, parameters, skips)
 
-                    else -> {
-                        generateStandardCompanion(writer, packageName, className, parameters)
-                    }
+                    else -> generateStandardCompanion(packageName, className, parameters, skips)
                 }
-            }
+
+            file.bufferedWriter().use { writer -> writer.write(companionSource) }
 
             val companionType =
                 when {
@@ -165,13 +220,12 @@ class StructureProcessor(
         }
 
         private fun generateStandardCompanion(
-            writer: Writer,
             packageName: String,
             className: String,
             parameters: List<KSValueParameter>,
-        ) {
-            writer.write(
-                """
+            skips: String,
+        ): String =
+            """
                 |package $packageName
                 |
                 |import aoc.ksp.BaseEntity
@@ -193,25 +247,22 @@ class StructureProcessor(
                 | *
                 | * Note: Regex named groups must match field names exactly
                 | */
-                |object ${className}Companion : IStructure<$className> {
+                |object ${className}Companion : IStructure<$className> {$skips
                 |    override fun create(collection: MatchGroupCollection): $className =
                 |        $className(
                 |${generateParameterMappings(parameters)},
                 |        )
                 |}
                 |
-                """.trimMargin(),
-            )
-        }
+            """.trimMargin()
 
         private fun generateCustomLineCompanion(
-            writer: Writer,
             packageName: String,
             className: String,
             parameters: List<KSValueParameter>,
-        ) {
-            writer.write(
-                """
+            skips: String,
+        ): String =
+            """
                 |package $packageName
                 |
                 |import aoc.ksp.IStructureCustomLine
@@ -230,7 +281,7 @@ class StructureProcessor(
                 | *
                 | * Note: The create method receives both the line and all matches
                 | */
-                |object ${className}Companion : IStructureCustomLine<$className> {
+                |object ${className}Companion : IStructureCustomLine<$className> {$skips
                 |    override fun create(
                 |        line: String,
                 |        collection: Sequence<MatchResult>,
@@ -240,18 +291,15 @@ class StructureProcessor(
                 |        )
                 |}
                 |
-                """.trimMargin(),
-            )
-        }
+            """.trimMargin()
 
         private fun generateLineBasedCompanion(
-            writer: Writer,
             packageName: String,
             className: String,
             parameters: List<KSValueParameter>,
-        ) {
-            writer.write(
-                """
+            skips: String,
+        ): String =
+            """
                 |package $packageName
                 |
                 |import aoc.ksp.BaseEntity
@@ -267,7 +315,7 @@ class StructureProcessor(
                 | * Supported field types:
                 | * - Int, String, Char
                 | * - Nullable variants of all types above
-                | * - IntRange named 'range', mapped to the match's own range
+                | * - IntRange annotated @FromMatch(MatchPart.RANGE), mapped to the match's own range
                 | * - Custom types with @FieldConverter annotation
                 | *
                 | * Usage: ${className}Companion.fromLine(line, regex)
@@ -278,29 +326,26 @@ class StructureProcessor(
                 | * Note: Regex is applied with findAll() to find every match in the line
                 | * Note: Regex named groups must match field names exactly
                 | */
-                |object ${className}Companion : IStructureLine<$className> {
+                |object ${className}Companion : IStructureLine<$className> {$skips
                 |    override fun create(collection: MatchResult): $className =
                 |        $className(
                 |${generateLineBasedParameterMappings(parameters)},
                 |        )
                 |}
                 |
-                """.trimMargin(),
-            )
-        }
+            """.trimMargin()
 
         private fun generateMultiStructureCompanion(
-            writer: Writer,
             packageName: String,
             className: String,
             sealedSubclasses: List<KSClassDeclaration>,
             discriminatorField: String,
-        ) {
+            skips: String,
+        ): String {
             val subclassParameters =
                 sealedSubclasses.flatMap { it.primaryConstructor?.parameters.orEmpty() }
 
-            writer.write(
-                """
+            return """
                 |package $packageName
                 |
                 |import aoc.ksp.BaseEntity
@@ -312,8 +357,12 @@ class StructureProcessor(
                 | *
                 | * Routes to the appropriate sealed subclass based on discriminator field '$discriminatorField'.
                 | *
-                | * Supported subclasses:
-                |${sealedSubclasses.joinToString("\n") { " * - ${it.simpleName.asString()}" }}
+                | * Discriminator mapping (uppercased group value -> subclass); renaming a subclass
+                | * changes the value it answers to:
+                |${sealedSubclasses.joinToString("\n") {
+                val name = it.simpleName.asString()
+                " * - \"${name.uppercase()}\" -> $name"
+            }}
                 | *
                 | * Usage: ${className}Companion.fromLine(line, regexArray)
                 | * Example:
@@ -326,7 +375,7 @@ class StructureProcessor(
                 | * Note: Regex named groups must match field names exactly
                 | * Note: Discriminator field '$discriminatorField' is used to determine the subclass
                 | */
-                |object ${className}Companion : IStructureMulti<$className> {
+                |object ${className}Companion : IStructureMulti<$className> {$skips
                 |    override fun create(collection: MatchGroupCollection): $className {
                 |        val discriminator = BaseEntity.getAsString(collection, "$discriminatorField").uppercase()
                 |        return when (discriminator) {
@@ -339,8 +388,29 @@ class StructureProcessor(
                 |    }
                 |}
                 |
-                """.trimMargin(),
-            )
+                """.trimMargin()
+        }
+
+        /**
+         * `override val` lines for the non-zero skip counts, formatted so they can be spliced into a
+         * companion body. Zero is the [IStructureSkips] default, so an entity that asks for no
+         * trimming generates exactly what it generated before the skips existed.
+         */
+        private fun skipOverrides(
+            skipHeaderLines: Int,
+            skipFooterLines: Int,
+        ): String {
+            val overrides =
+                buildList {
+                    if (skipHeaderLines > 0) add("skipHeaderLines" to skipHeaderLines)
+                    if (skipFooterLines > 0) add("skipFooterLines" to skipFooterLines)
+                }
+
+            if (overrides.isEmpty()) return ""
+            return overrides.joinToString(
+                separator = "",
+                prefix = "\n",
+            ) { (name, count) -> "|    override val $name: Int = $count\n" } + "|"
         }
 
         /**
@@ -358,6 +428,25 @@ class StructureProcessor(
             return "\n|${converters.joinToString("\n") { "import $it" }}"
         }
 
+        /**
+         * The `MatchPart` name an explicit `@FromMatch` asks for, or `null` when the parameter is
+         * read from a named group like every other one.
+         */
+        private fun matchPartOf(param: KSValueParameter): String? {
+            val part =
+                param.annotations
+                    .find { annotation -> annotation.shortName.asString() == "FromMatch" }
+                    ?.arguments
+                    ?.find { it.name?.asString() == "part" }
+                    ?.value ?: return null
+
+            return when (part) {
+                is KSType -> part.declaration.simpleName.asString()
+                is KSClassDeclaration -> part.simpleName.asString()
+                else -> part.toString().substringAfterLast('.')
+            }
+        }
+
         private fun converterTypeOf(param: KSValueParameter): KSType? =
             param.annotations
                 .find { annotation -> annotation.shortName.asString() == "FieldConverter" }
@@ -365,41 +454,76 @@ class StructureProcessor(
                 ?.find { it.name?.asString() == "converter" }
                 ?.value as? KSType
 
-        private fun generateCustomLineParameterMappings(parameters: List<KSValueParameter>): String {
-            // For custom line processing, we expect specific parameter patterns
-            // The first parameter is typically the line itself, and subsequent parameters
-            // are derived from the collection
-            return parameters.joinToString(",\n") { param ->
+        /**
+         * Custom-line companions get the raw line plus the whole match sequence, neither of which is
+         * a named group, so every parameter has to say where it comes from via `@FromMatch`.
+         */
+        private fun generateCustomLineParameterMappings(parameters: List<KSValueParameter>): String =
+            parameters.joinToString(",\n") { param ->
                 val name = param.name?.asString() ?: "unknown"
                 val type = param.type.resolve()
                 val typeString = type.declaration.simpleName.asString()
 
-                when {
-                    typeString == "String" && name == "stringValue" -> {
-                        "            $name = line"
+                val expression =
+                    when (val part = matchPartOf(param)) {
+                        "LINE" ->
+                            if (typeString == "String") {
+                                "line"
+                            } else {
+                                logger.error(
+                                    "@FromMatch(LINE) needs a String parameter, but '$name' is '$typeString'",
+                                    param,
+                                )
+                                "TODO(\"$name\")"
+                            }
+
+                        "ALL_MATCHES" ->
+                            if (typeString == "List") {
+                                val innerType =
+                                    type.arguments
+                                        .firstOrNull()
+                                        ?.type
+                                        ?.resolve()
+                                        ?.declaration
+                                        ?.simpleName
+                                        ?.asString()
+                                if (innerType == null) {
+                                    logger.error(
+                                        "@FromMatch(ALL_MATCHES) needs a List<T> element type on '$name'",
+                                        param,
+                                    )
+                                    "TODO(\"$name\")"
+                                } else {
+                                    // The element type is constructed from the match text, so it needs a
+                                    // constructor taking a single String.
+                                    "collection.toList().map { $innerType(it.value) }"
+                                }
+                            } else {
+                                logger.error(
+                                    "@FromMatch(ALL_MATCHES) needs a List parameter, but '$name' is '$typeString'",
+                                    param,
+                                )
+                                "TODO(\"$name\")"
+                            }
+
+                        else -> {
+                            val detail =
+                                if (part == null) {
+                                    "is missing @FromMatch"
+                                } else {
+                                    "uses @FromMatch($part), which is not valid here"
+                                }
+                            logger.error(
+                                "@GenerateStructure(customLine=true): parameter '$name' $detail; " +
+                                    "use MatchPart.LINE or MatchPart.ALL_MATCHES",
+                                param,
+                            )
+                            "TODO(\"$name\")"
+                        }
                     }
 
-                    typeString == "List" -> {
-                        // For List types, we convert the collection
-                        val typeArg =
-                            type.arguments
-                                .firstOrNull()
-                                ?.type
-                                ?.resolve()
-                        val innerType = typeArg?.declaration?.simpleName?.asString() ?: "Unknown"
-                        "            $name = collection.toList().map { $innerType(it.value) }"
-                    }
-
-                    else -> {
-                        logger.warn(
-                            "Custom line parameter '$name' of type '$typeString' may need manual mapping",
-                            param,
-                        )
-                        "            $name = TODO(\"Map $name from line or collection\")"
-                    }
-                }
+                "            $name = $expression"
             }
-        }
 
         private fun generateParameterMappings(parameters: List<KSValueParameter>): String =
             parameters.joinToString(",\n") { param ->
@@ -408,8 +532,8 @@ class StructureProcessor(
 
         /**
          * Line-based companions receive a [MatchResult] rather than a [MatchGroupCollection], so the
-         * accessors read from `collection.groups`. An `IntRange` parameter named `range` is mapped to
-         * the match's own position in the line, which has no equivalent named group.
+         * accessors read from `collection.groups`. A parameter annotated `@FromMatch(RANGE)` is mapped
+         * to the match's own position in the line, which has no equivalent named group.
          */
         private fun generateLineBasedParameterMappings(parameters: List<KSValueParameter>): String =
             parameters.joinToString(",\n") { param ->
@@ -421,10 +545,28 @@ class StructureProcessor(
                         .asString()
 
                 val expression =
-                    if (name == "range" && typeString == "IntRange") {
-                        "collection.range"
-                    } else {
-                        getterExpression(param, receiver = "collection.groups")
+                    when (val part = matchPartOf(param)) {
+                        null -> getterExpression(param, receiver = "collection.groups")
+
+                        "RANGE" ->
+                            if (typeString == "IntRange") {
+                                "collection.range"
+                            } else {
+                                logger.error(
+                                    "@FromMatch(RANGE) needs an IntRange parameter, but '$name' is '$typeString'",
+                                    param,
+                                )
+                                "TODO(\"$name\")"
+                            }
+
+                        else -> {
+                            logger.error(
+                                "@FromMatch($part) is not valid with lineBased=true; parameter '$name' " +
+                                    "can only use MatchPart.RANGE or a named group",
+                                param,
+                            )
+                            "TODO(\"$name\")"
+                        }
                     }
 
                 "            $name = $expression"

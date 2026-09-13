@@ -1,10 +1,13 @@
 package aoc.ksp
 
-interface IStructureCustomLine<Type> {
+interface IStructureCustomLine<Type> : IStructureSkips {
     fun fromLine(
         line: String,
         regex: Regex? = null,
-    ): Type = create(line, regex!!.findAll(line))
+    ): Type {
+        requireNotNull(regex) { "${this::class.simpleName} needs a regex to parse line: '$line'" }
+        return create(line, regex.findAll(line))
+    }
 
     fun create(
         line: String,

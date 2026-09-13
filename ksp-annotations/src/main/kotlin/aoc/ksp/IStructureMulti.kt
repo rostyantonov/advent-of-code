@@ -1,6 +1,6 @@
 package aoc.ksp
 
-interface IStructureMulti<Type : Any> {
+interface IStructureMulti<Type : Any> : IStructureSkips {
     fun fromLine(
         line: String,
         regexArray: Array<Regex>,

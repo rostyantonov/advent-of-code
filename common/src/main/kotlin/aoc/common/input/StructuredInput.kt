@@ -1,6 +1,9 @@
 package aoc.common.input
 
 import aoc.common.input.StringInput.filterLines
+import aoc.ksp.IStructure
+import aoc.ksp.IStructureCustomLine
+import aoc.ksp.IStructureLine
 import kotlin.reflect.KFunction2
 
 /**
@@ -50,4 +53,50 @@ class StructuredInput<Structure>(
      * @return First parsed entity
      */
     fun getSingleStructInput(blockInput: List<String>): Structure = builder(blockInput.first(), regex)
+
+    /**
+     * Factories that take the generated companion itself, so the skip counts declared on the entity
+     * through `@GenerateStructure` travel with it instead of being repeated at every call site.
+     *
+     * They are factories rather than constructors because `IStructure<T>`, `IStructureLine<T>` and
+     * `IStructureCustomLine<T>` all erase to the same JVM signature; the `@JvmName`s keep them apart
+     * while leaving one name to call in Kotlin.
+     */
+    companion object {
+        @JvmName("ofStructure")
+        fun <Type> of(
+            regex: Regex?,
+            structure: IStructure<Type>,
+        ): StructuredInput<Type> =
+            StructuredInput(
+                regex,
+                structure::fromLine,
+                structure.skipHeaderLines,
+                structure.skipFooterLines,
+            )
+
+        @JvmName("ofStructureLine")
+        fun <Type> of(
+            regex: Regex?,
+            structure: IStructureLine<Type>,
+        ): StructuredInput<List<Type>> =
+            StructuredInput(
+                regex,
+                structure::fromLine,
+                structure.skipHeaderLines,
+                structure.skipFooterLines,
+            )
+
+        @JvmName("ofStructureCustomLine")
+        fun <Type> of(
+            regex: Regex?,
+            structure: IStructureCustomLine<Type>,
+        ): StructuredInput<Type> =
+            StructuredInput(
+                regex,
+                structure::fromLine,
+                structure.skipHeaderLines,
+                structure.skipFooterLines,
+            )
+    }
 }
