@@ -8,14 +8,12 @@ sealed interface PowerEntity : IDataClass<PowerEntity> {
     val name: String
 
     data class Generator(
-        val type: String,
         override val name: String,
     ) : PowerEntity {
         override fun clone(): Generator = copy()
     }
 
     data class Microchip(
-        val type: String,
         override val name: String,
     ) : PowerEntity {
         override fun clone(): Microchip = copy()

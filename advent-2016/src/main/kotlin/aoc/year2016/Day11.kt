@@ -197,10 +197,10 @@ class Day11 : AoCFileInput<List<Floor>, Int>() {
             FloorsState(
                 input.clone().also {
                     with(it[0].powerEntities) {
-                        add(Generator("generator", "elerium"))
-                        add(Microchip("microchip", "elerium"))
-                        add(Generator("generator", "dilithium"))
-                        add(Microchip("microchip", "dilithium"))
+                        add(Generator("elerium"))
+                        add(Microchip("elerium"))
+                        add(Generator("dilithium"))
+                        add(Microchip("dilithium"))
                     }
                 },
             ),
