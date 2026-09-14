@@ -86,8 +86,11 @@ Routes to different sealed subclasses based on a discriminator field.
 ```kotlin
 @GenerateStructure(multiStructure = true, discriminatorField = "cmd")
 sealed class AsmInstruction {
-    data class Jmp(val offset: Int) : AsmInstruction()
-    data class Inc(val register: String) : AsmInstruction()
+    @StructureName("jmp")
+    data class Jump(val offset: Int) : AsmInstruction()
+
+    @StructureName("inc")
+    data class Increment(val register: String) : AsmInstruction()
 }
 ```
 

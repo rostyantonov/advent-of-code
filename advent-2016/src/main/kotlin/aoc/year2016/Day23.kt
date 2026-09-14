@@ -131,13 +131,13 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
             val outerJump = block[6]
 
             val opcodesMatch =
-                zeroing is AsmInstruction.Cpy &&
-                    copy is AsmInstruction.Cpy &&
-                    increment is AsmInstruction.Inc &&
-                    innerDec is AsmInstruction.Dec &&
-                    innerJump is AsmInstruction.Jnz &&
-                    outerDec is AsmInstruction.Dec &&
-                    outerJump is AsmInstruction.Jnz
+                zeroing is AsmInstruction.Copy &&
+                    copy is AsmInstruction.Copy &&
+                    increment is AsmInstruction.Increment &&
+                    innerDec is AsmInstruction.Decrement &&
+                    innerJump is AsmInstruction.JumpIfNotZero &&
+                    outerDec is AsmInstruction.Decrement &&
+                    outerJump is AsmInstruction.JumpIfNotZero
             if (!opcodesMatch) return false
 
             val destination = zeroing.register2
@@ -176,13 +176,13 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
             val outerJump = block[6]
 
             val opcodesMatch =
-                outerSeed is AsmInstruction.Cpy &&
-                    innerSeed is AsmInstruction.Jnz &&
-                    increment is AsmInstruction.Inc &&
-                    innerInc is AsmInstruction.Inc &&
-                    innerJump is AsmInstruction.Jnz &&
-                    outerInc is AsmInstruction.Inc &&
-                    outerJump is AsmInstruction.Jnz
+                outerSeed is AsmInstruction.Copy &&
+                    innerSeed is AsmInstruction.JumpIfNotZero &&
+                    increment is AsmInstruction.Increment &&
+                    innerInc is AsmInstruction.Increment &&
+                    innerJump is AsmInstruction.JumpIfNotZero &&
+                    outerInc is AsmInstruction.Increment &&
+                    outerJump is AsmInstruction.JumpIfNotZero
             if (!opcodesMatch) return false
 
             val outerCounter = outerSeed.register2

@@ -25,9 +25,9 @@ class AsmComputerTest {
         val computer =
             SimpleAsmComputer(
                 listOf(
-                    AsmInstruction.Jgz("1", "2"),
-                    AsmInstruction.Inc(A_REG),
-                    AsmInstruction.Inc(B_REG),
+                    AsmInstruction.JumpIfPositive("1", "2"),
+                    AsmInstruction.Increment(A_REG),
+                    AsmInstruction.Increment(B_REG),
                 ),
             )
         computer.run()
@@ -38,7 +38,7 @@ class AsmComputerTest {
 
     @Test
     fun `halts when the program counter leaves the program`() {
-        val computer = SimpleAsmComputer(listOf(AsmInstruction.Jmp(-4)))
+        val computer = SimpleAsmComputer(listOf(AsmInstruction.Jump(-4)))
         computer.run()
 
         assertTrue(computer.halted)
@@ -47,7 +47,7 @@ class AsmComputerTest {
 
     @Test
     fun `run stops at the step limit without halting`() {
-        val computer = SimpleAsmComputer(listOf(AsmInstruction.Inc(A_REG), AsmInstruction.Jmp(-1)))
+        val computer = SimpleAsmComputer(listOf(AsmInstruction.Increment(A_REG), AsmInstruction.Jump(-1)))
         computer.run(maxSteps = 10L)
 
         assertFalse(computer.halted)
@@ -57,7 +57,7 @@ class AsmComputerTest {
 
     @Test
     fun `a blocking receive parks the program counter until the machine is woken`() {
-        val computer = BlockingComputer(listOf(AsmInstruction.Rcv(A_REG), AsmInstruction.Inc(B_REG)))
+        val computer = BlockingComputer(listOf(AsmInstruction.Receive(A_REG), AsmInstruction.Increment(B_REG)))
         computer.run()
 
         assertTrue(computer.blocked)
@@ -73,7 +73,7 @@ class AsmComputerTest {
 
     @Test
     fun `opcodes the machine does not implement are rejected`() {
-        val computer = SimpleAsmComputer(listOf(AsmInstruction.Snd(A_REG)))
+        val computer = SimpleAsmComputer(listOf(AsmInstruction.Send(A_REG)))
 
         assertFailsWith<UnsupportedTypeException> { computer.run() }
     }

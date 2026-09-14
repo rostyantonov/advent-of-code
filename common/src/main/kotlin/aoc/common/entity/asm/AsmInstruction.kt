@@ -1,6 +1,7 @@
 package aoc.common.entity.asm
 
 import aoc.ksp.GenerateStructure
+import aoc.ksp.StructureName
 
 /**
  * Union of every opcode used by the assembunny (2015/2016) and Duet (2017) machines.
@@ -18,7 +19,8 @@ sealed interface AsmInstruction {
      */
     fun execute(computer: AsmComputer): Int
 
-    data class Inc(
+    @StructureName("inc")
+    data class Increment(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -27,7 +29,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Hlf(
+    @StructureName("hlf")
+    data class Halve(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -36,7 +39,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Tpl(
+    @StructureName("tpl")
+    data class Triple(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -45,13 +49,15 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Jmp(
+    @StructureName("jmp")
+    data class Jump(
         val offset: Int,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int = offset
     }
 
-    data class Jie(
+    @StructureName("jie")
+    data class JumpIfEven(
         val register: String,
         val offset: Int,
     ) : AsmInstruction {
@@ -63,7 +69,8 @@ sealed interface AsmInstruction {
             }
     }
 
-    data class Jio(
+    @StructureName("jio")
+    data class JumpIfOne(
         val register: String,
         val offset: Int,
     ) : AsmInstruction {
@@ -75,7 +82,8 @@ sealed interface AsmInstruction {
             }
     }
 
-    data class Dec(
+    @StructureName("dec")
+    data class Decrement(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -84,7 +92,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Cpy(
+    @StructureName("cpy")
+    data class Copy(
         val valueOrRegister: String,
         val register2: String,
     ) : AsmInstruction {
@@ -94,7 +103,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Jnz(
+    @StructureName("jnz")
+    data class JumpIfNotZero(
         val valueOrRegister: String,
         val offsetOrRegister: String,
     ) : AsmInstruction {
@@ -107,7 +117,8 @@ sealed interface AsmInstruction {
     }
 
     /** Rewrites another instruction; the rewrite rules belong to the machine. */
-    data class Tgl(
+    @StructureName("tgl")
+    data class Toggle(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -117,7 +128,8 @@ sealed interface AsmInstruction {
     }
 
     /** Emits a value on the output channel of the machine. */
-    data class Out(
+    @StructureName("out")
+    data class Output(
         val valueOrRegister: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -127,7 +139,8 @@ sealed interface AsmInstruction {
     }
 
     /** Plays a sound, or sends a message to the partner program, depending on the machine. */
-    data class Snd(
+    @StructureName("snd")
+    data class Send(
         val valueOrRegister: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int {
@@ -136,7 +149,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Set(
+    @StructureName("set")
+    data class Assign(
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
@@ -146,6 +160,7 @@ sealed interface AsmInstruction {
         }
     }
 
+    @StructureName("add")
     data class Add(
         val register: String,
         val valueOrRegister: String,
@@ -156,7 +171,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Mul(
+    @StructureName("mul")
+    data class Multiply(
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
@@ -166,7 +182,8 @@ sealed interface AsmInstruction {
         }
     }
 
-    data class Mod(
+    @StructureName("mod")
+    data class Modulo(
         val register: String,
         val valueOrRegister: String,
     ) : AsmInstruction {
@@ -177,13 +194,15 @@ sealed interface AsmInstruction {
     }
 
     /** Recovers the last sound, or waits for a message; the machine decides which and how far to move. */
-    data class Rcv(
+    @StructureName("rcv")
+    data class Receive(
         val register: String,
     ) : AsmInstruction {
         override fun execute(computer: AsmComputer): Int = computer.recover(register)
     }
 
-    data class Jgz(
+    @StructureName("jgz")
+    data class JumpIfPositive(
         val valueOrRegister: String,
         val offsetOrRegister: String,
     ) : AsmInstruction {

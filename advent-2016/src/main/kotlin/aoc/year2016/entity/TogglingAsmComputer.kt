@@ -24,11 +24,13 @@ open class TogglingAsmComputer(
 
         instructions[target] =
             when (val instruction = instructions[target]) {
-                is AsmInstruction.Inc -> AsmInstruction.Dec(instruction.register)
-                is AsmInstruction.Dec -> AsmInstruction.Inc(instruction.register)
-                is AsmInstruction.Tgl -> AsmInstruction.Inc(instruction.register)
-                is AsmInstruction.Jnz -> AsmInstruction.Cpy(instruction.valueOrRegister, instruction.offsetOrRegister)
-                is AsmInstruction.Cpy -> AsmInstruction.Jnz(instruction.valueOrRegister, instruction.register2)
+                is AsmInstruction.Increment -> AsmInstruction.Decrement(instruction.register)
+                is AsmInstruction.Decrement -> AsmInstruction.Increment(instruction.register)
+                is AsmInstruction.Toggle -> AsmInstruction.Increment(instruction.register)
+                is AsmInstruction.JumpIfNotZero ->
+                    AsmInstruction.Copy(instruction.valueOrRegister, instruction.offsetOrRegister)
+                is AsmInstruction.Copy ->
+                    AsmInstruction.JumpIfNotZero(instruction.valueOrRegister, instruction.register2)
                 else -> instruction
             }
     }
@@ -39,9 +41,9 @@ open class TogglingAsmComputer(
      */
     override fun intercept(instruction: AsmInstruction): Int? =
         when (instruction) {
-            is AsmInstruction.Cpy -> NEXT.takeUnless { isRegister(instruction.register2) }
-            is AsmInstruction.Inc -> NEXT.takeUnless { isRegister(instruction.register) }
-            is AsmInstruction.Dec -> NEXT.takeUnless { isRegister(instruction.register) }
+            is AsmInstruction.Copy -> NEXT.takeUnless { isRegister(instruction.register2) }
+            is AsmInstruction.Increment -> NEXT.takeUnless { isRegister(instruction.register) }
+            is AsmInstruction.Decrement -> NEXT.takeUnless { isRegister(instruction.register) }
             else -> null
         }
 
