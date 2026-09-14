@@ -61,7 +61,7 @@ class Day09 : AoCFileInput<List<Decompress>, Long>() {
 
                 val dataStartPos = decompress.range.last + 1
                 val dataEndPos = dataStartPos + decompress.num
-                setRepetitionCounts(multiArray, dataStartPos, dataEndPos, decompress.times.toLong())
+                setRepetitionCounts(multiArray, dataStartPos, dataEndPos, decompress.times)
             }
         }
 
@@ -107,7 +107,7 @@ class Day09 : AoCFileInput<List<Decompress>, Long>() {
 
             val dataStartPos = decompress.range.last + 1
             val dataEndPos = dataStartPos + decompress.num
-            multiplyRepetitionCounts(multiArray, dataStartPos, dataEndPos, decompress.times.toLong())
+            multiplyRepetitionCounts(multiArray, dataStartPos, dataEndPos, decompress.times)
         }
 
         return multiArray.sum()

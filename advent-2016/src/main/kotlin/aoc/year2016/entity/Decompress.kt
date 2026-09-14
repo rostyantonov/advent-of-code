@@ -8,5 +8,6 @@ import aoc.ksp.MatchPart
 data class Decompress(
     @FromMatch(MatchPart.RANGE) val range: IntRange,
     val num: Int,
-    val times: Int,
+    // Long because part two multiplies the repetition counts together, which overflows an Int
+    val times: Long,
 )
