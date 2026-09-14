@@ -1,6 +1,7 @@
 package aoc.ksp
 
 import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
@@ -11,7 +12,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
  * Single source of truth: [ParameterMappings.getterExpression] checks against it and
  * [CompanionTemplates] documents it in the generated KDoc, so the two cannot drift.
  */
-internal val SUPPORTED_TYPES = listOf("Int", "String", "Char")
+internal val SUPPORTED_TYPES = listOf("Int", "Long", "Boolean", "String", "Char")
 
 /**
  * Turns constructor parameters into the expressions that produce their values.
@@ -41,11 +42,19 @@ internal class ParameterMappings(
         val typeString = type.declaration.simpleName.asString()
         val isNullable = type.isMarkedNullable
 
+        // Any enum is supported, because the getter is generic: the constant is matched by name
+        // against the group value rather than by a getter BaseEntity has to declare per type.
+        if (enumDeclarationOf(param) != null) {
+            val getter = if (isNullable) "getAsNullableEnum" else "getAsEnum"
+            return "BaseEntity.$getter<$typeString>($receiver, \"$name\")"
+        }
+
         if (typeString !in SUPPORTED_TYPES) {
             val rendered = "$typeString${if (isNullable) "?" else ""}"
             logger.error(
                 "Unsupported type: $rendered for parameter $name. " +
-                    "Supported types: ${SUPPORTED_TYPES.joinToString(", ")} (and nullable variants). " +
+                    "Supported types: ${SUPPORTED_TYPES.joinToString(", ")}, any enum " +
+                    "(and nullable variants). " +
                     "For custom types, use @FieldConverter annotation with a TypeConverter implementation.",
                 param,
             )
@@ -55,6 +64,20 @@ internal class ParameterMappings(
 
         val getter = if (isNullable) "getAsNullable$typeString" else "getAs$typeString"
         return "BaseEntity.$getter($receiver, \"$name\")"
+    }
+
+    /**
+     * The enum class a parameter is declared as, or null when it is anything else.
+     *
+     * A parameter carrying an explicit `@FieldConverter` is never treated as an enum: the converter
+     * is the author saying the default name matching is not what this field needs, which is how
+     * `BitOperationConverter` keeps its DIRECT fallback for an absent group.
+     */
+    fun enumDeclarationOf(param: KSValueParameter): KSClassDeclaration? {
+        if (converterTypeOf(param) != null) return null
+
+        val declaration = param.type.resolve().declaration
+        return (declaration as? KSClassDeclaration)?.takeIf { it.classKind == ClassKind.ENUM_CLASS }
     }
 
     /** The [TypeConverter] a parameter's `@FieldConverter` names, or null when it has none. */

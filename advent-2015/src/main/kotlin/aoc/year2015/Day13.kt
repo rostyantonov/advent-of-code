@@ -5,6 +5,7 @@ import aoc.common.input.StructuredInput
 import aoc.common.util.reverse
 import aoc.year2015.entity.Attendee
 import aoc.year2015.entity.AttendeeCompanion
+import aoc.year2015.entity.GainLose
 import aoc.year2015.entity.Path
 
 class Day13 : AoCFileInput<List<Attendee>, Int>() {
@@ -101,7 +102,7 @@ class Day13 : AoCFileInput<List<Attendee>, Int>() {
      * What is the total change in happiness for the optimal seating arrangement that actually includes yourself?
      */
     override fun processPartTwo(): Int {
-        updatedInput = input + Attendee("MySelf", "MySelf", "gain", 0)
+        updatedInput = input + Attendee("MySelf", "MySelf", GainLose.GAIN, 0)
         return links.maxBy { it.distance }.distance
     }
     // result 668 for part 2

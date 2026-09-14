@@ -1,13 +1,12 @@
 package aoc.year2015.entity
 
-import aoc.common.util.safeValue
 import aoc.ksp.GenerateStructure
 
 @GenerateStructure
 data class Attendee(
     val who: String,
     val to: String,
-    val state: String,
+    val state: GainLose,
     val rawAmount: Int,
 ) {
     val whoTo: Pair<String, String>
@@ -15,7 +14,7 @@ data class Attendee(
 
     val amount: Int
         get() =
-            when (safeValue<GainLose>(state)) {
+            when (state) {
                 GainLose.GAIN -> rawAmount
                 GainLose.LOSE -> -rawAmount
             }

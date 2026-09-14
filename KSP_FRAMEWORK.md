@@ -10,7 +10,8 @@ The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to a
 
 - **Automatic Implementation Generation**: Annotate your data class and get a complete companion object
 - **Multiple Patterns**: Supports standard, line-based, custom line, and multi-structure patterns
-- **Type Support**: Supports Int, String, Char (nullable and non-nullable) in every mode
+- **Type Support**: Supports Int, Long, Boolean, String, Char and any enum (nullable and
+  non-nullable) in every mode
 - **Field Name Mapping**: Automatically maps regex named groups to field names
 - **Declared Input Window**: `skipHeaderLines`/`skipFooterLines` travel with the entity
 - **Subclass Aliases**: `@StructureName` lets a sealed subclass keep a readable name while
@@ -211,11 +212,21 @@ trimming that belongs to one puzzle rather than to the entity.
 | Type | Non-Nullable | Nullable |
 |------|--------------|----------|
 | Int | ✅ | ✅ |
+| Long | ✅ | ✅ |
+| Boolean** | ✅ | ✅ |
 | String | ✅ | ✅ |
 | Char | ✅ | ✅ |
+| Enum*** | ✅ | ✅ |
 | Custom* | ✅ | ✅ |
 
 \* Custom types require a `@FieldConverter` annotation with a `TypeConverter` implementation.
+
+\*\* Strictly `true` or `false`; anything else is a missing value rather than a silent `false`.
+
+\*\*\* Any enum works without a converter. The group value is matched against the constant names
+ignoring case, with spaces read as underscores (`turn on` -> `TURN_ON`), mirroring
+`aoc.common.util.safeValue`. A `@FieldConverter` on an enum field still wins, which is how
+`BitOperationConverter` keeps its `DIRECT` fallback for an absent group.
 
 All four generation modes support the same set of types. Anything else is a compile-time error
 pointing you at `@FieldConverter` or `BaseEntity`.
@@ -319,10 +330,14 @@ fun getAsNullableYourType(collection: MatchGroupCollection, name: String) =
     collection[name]?.value?.toYourTypeOrNull()
 ```
 
-2. Add the simple name to the `supported` set in `getterExpression` in `StructureProcessor.kt`.
-   The getter name is derived as `getAs<Type>` / `getAsNullable<Type>`, so no branch is needed —
-   and because `getterExpression` is the single source of truth, standard entities, customLine
-   entities and sealed subclass branches all pick up the new type at once.
+2. Add the simple name to `SUPPORTED_TYPES` in `ParameterMappings.kt`. The getter name is derived
+   as `getAs<Type>` / `getAsNullable<Type>`, so no branch is needed — and because
+   `getterExpression` is the single source of truth, standard entities, customLine entities and
+   sealed subclass branches all pick up the new type at once. `SUPPORTED_TYPES` also drives the
+   "Supported field types" list in the generated KDoc, so the docs cannot drift from the check.
+
+Enums need no step at all: `getAsEnum` is generic, so the processor recognises any
+`ClassKind.ENUM_CLASS` parameter and imports the type when it lives outside the entity's package.
 
 ## Limitations
 
@@ -353,7 +368,11 @@ ksp-annotations/                      # runtime API, no KSP dependency
 
 ksp-processor/                        # compile-time only
 ├── src/main/kotlin/aoc/ksp/
-│   └── StructureProcessor.kt         # KSP processor + provider
+│   ├── StructureProcessor.kt         # SymbolProcessor, the visitor and the mode dispatch
+│   ├── StructureOptions.kt           # @GenerateStructure arguments, read and validated once
+│   ├── ParameterMappings.kt          # parameter -> expression, plus SUPPORTED_TYPES
+│   └── CompanionTemplates.kt         # the four codegen templates
+├── src/test/kotlin/aoc/ksp/          # kotlin-compile-testing: generated output and diagnostics
 └── src/main/resources/META-INF/services/
     └── com.google.devtools.ksp.processing.SymbolProcessorProvider
 ```

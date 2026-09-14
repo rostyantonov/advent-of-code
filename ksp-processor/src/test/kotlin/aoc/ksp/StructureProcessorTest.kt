@@ -69,6 +69,132 @@ class StructureProcessorTest {
     }
 
     @Test
+    fun `Long and Boolean read through their own getters`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Reading",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure
+                        data class Reading(
+                            val total: Long,
+                            val enabled: Boolean,
+                            val cap: Long?,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Reading"))
+        assertContains(companion, """total = BaseEntity.getAsLong(collection, "total")""")
+        assertContains(companion, """enabled = BaseEntity.getAsBoolean(collection, "enabled")""")
+        assertContains(companion, """cap = BaseEntity.getAsNullableLong(collection, "cap")""")
+    }
+
+    @Test
+    fun `an enum parameter needs no converter`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Switch",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        enum class Power { TURN_ON, TURN_OFF }
+
+                        @GenerateStructure
+                        data class Switch(
+                            val action: Power,
+                            val fallback: Power?,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Switch"))
+        assertContains(companion, """action = BaseEntity.getAsEnum<Power>(collection, "action")""")
+        assertContains(companion, """fallback = BaseEntity.getAsNullableEnum<Power>(collection, "fallback")""")
+        // Same package as the entity, so the type resolves without an import.
+        assertFalse(companion.contains("import test.Power"))
+    }
+
+    @Test
+    fun `an enum from another package is imported`() {
+        val result =
+            CompilationFixture.process(
+                CompilationFixture.source(
+                    fileName = "Power.kt",
+                    contents =
+                        """
+                        package other
+
+                        enum class Power { ON, OFF }
+                        """.trimIndent(),
+                ),
+                entity(
+                    name = "Switch",
+                    imports = listOf("aoc.ksp.GenerateStructure", "other.Power"),
+                    body =
+                        """
+                        @GenerateStructure
+                        data class Switch(
+                            val action: Power,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Switch"))
+        assertContains(companion, "import other.Power")
+    }
+
+    @Test
+    fun `an explicit converter wins over native enum support`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Bit",
+                    imports = listOf("aoc.ksp.BaseEntity", "aoc.ksp.TypeConverter"),
+                    body =
+                        """
+                        enum class Bit { SET, DIRECT }
+
+                        object BitConverter : TypeConverter<Bit> {
+                            override fun convert(
+                                collection: MatchGroupCollection,
+                                fieldName: String,
+                            ): Bit = BaseEntity.getAsNullableEnum<Bit>(collection, fieldName) ?: Bit.DIRECT
+                        }
+                        """.trimIndent(),
+                ),
+                entity(
+                    name = "Gate",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.FieldConverter"),
+                    body =
+                        """
+                        @GenerateStructure
+                        data class Gate(
+                            @FieldConverter(BitConverter::class)
+                            val op: Bit,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Gate"))
+        // A converter is the author overriding the default name matching, so it must not be
+        // silently replaced by getAsEnum - that would drop BitConverter's fallback.
+        assertContains(companion, """op = BitConverter.convert(collection, "op")""")
+        assertFalse(companion.contains("getAsEnum"))
+    }
+
+    @Test
     fun `declared skips become overrides on the companion`() {
         val result =
             CompilationFixture.process(

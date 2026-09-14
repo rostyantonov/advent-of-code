@@ -1,6 +1,5 @@
 package aoc.year2016.entity
 
-import aoc.ksp.FieldConverter
 import aoc.ksp.GenerateStructure
 import aoc.year2016.entity.FactoryInOut.BOT
 import aoc.year2016.entity.FactoryInOut.OUTPUT
@@ -8,22 +7,17 @@ import aoc.year2016.entity.FactoryInOut.OUTPUT
 @GenerateStructure(multiStructure = true, discriminatorField = "cmd")
 sealed class FactoryLine {
     data class Value(
-        @FieldConverter(FactoryInOutConverter::class)
         val cmd: FactoryInOut,
         val value: Int,
-        @FieldConverter(FactoryInOutConverter::class)
         val typeOut: FactoryInOut,
         val outId: Int,
     ) : FactoryLine()
 
     data class Bot(
-        @FieldConverter(FactoryInOutConverter::class)
         val cmd: FactoryInOut,
         val botId: Int,
-        @FieldConverter(FactoryInOutConverter::class)
         val lowOut: FactoryInOut,
         val lowId: Int,
-        @FieldConverter(FactoryInOutConverter::class)
         val highOut: FactoryInOut,
         val highId: Int,
         val inBin: MutableList<Int> = mutableListOf(),

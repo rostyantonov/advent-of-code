@@ -24,6 +24,9 @@ object CompilationFixture {
             KotlinCompilation().apply {
                 this.sources = sources.toList()
                 inheritClassPath = true
+                // kotlin-compile-testing defaults to 1.8, which cannot inline BaseEntity's reified
+                // enum getters off the inherited classpath. The real modules are on toolchain 21.
+                jvmTarget = "21"
                 useKsp2()
                 symbolProcessorProviders.add(StructureProcessorProvider())
                 messageOutputStream = OutputStream.nullOutputStream()
@@ -39,6 +42,12 @@ object CompilationFixture {
 
         return ProcessorResult(result.exitCode, result.messages, generated)
     }
+
+    /** A source file written out verbatim, for the cases that need their own package header. */
+    fun source(
+        fileName: String,
+        contents: String,
+    ): SourceFile = SourceFile.kotlin(fileName, contents)
 
     /** A source file holding a single entity, with the `aoc.ksp` imports the processor needs. */
     fun entity(
