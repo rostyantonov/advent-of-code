@@ -1,5 +1,6 @@
 package aoc.common.entity
 
+import aoc.common.util.valueOrElse
 import aoc.ksp.BaseEntity
 import aoc.ksp.StructureName
 import org.junit.jupiter.api.Test
@@ -94,6 +95,16 @@ class BaseEntityTest {
 
         val thrown = assertThrows<IllegalArgumentException> { BaseEntity.asEnum<Switch>("Left") }
         assertEquals("'Left' is not a Switch; expected one of TURN_ON, L", thrown.message)
+    }
+
+    @Test
+    fun `test valueOrElse shares the matching and only adds a default`() {
+        assertEquals(Switch.Left, valueOrElse("l", Switch.TURN_ON))
+        assertEquals(Switch.TURN_ON, valueOrElse("turn on", Switch.Left))
+
+        // Absent group, and a token no constant answers to: both mean the caller's default.
+        assertEquals(Switch.TURN_ON, valueOrElse(null, Switch.TURN_ON))
+        assertEquals(Switch.TURN_ON, valueOrElse("Left", Switch.TURN_ON))
     }
 
     @Test

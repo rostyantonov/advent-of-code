@@ -1,13 +1,13 @@
 package aoc.common.util
 
-import aoc.common.entity.CharConstants.CHAR_UNDERSCORE
-import aoc.common.entity.CharConstants.EMPTY_SPACE
+import aoc.ksp.BaseEntity
 
 /**
- * Resolves [type] to an enum constant, falling back to [value] when the group did not match.
+ * Resolves [type] to an enum constant, falling back to [value] when nothing matches.
  *
- * The plain case is handled by `BaseEntity.getAsEnum`, which the processor emits for any enum
- * parameter; this stays for the converters that need a default rather than a failure.
+ * Matching is `BaseEntity`'s, the same rule the processor emits for every enum parameter, so an
+ * `@StructureName` alias is honoured here too. All this adds is the default: the converters that
+ * call it want an absent or unrecognised group to mean something rather than to fail.
  */
 inline fun <reified T : Enum<T>> valueOrElse(
     type: String?,
@@ -16,5 +16,5 @@ inline fun <reified T : Enum<T>> valueOrElse(
     if (type.isNullOrEmpty()) {
         return value
     }
-    return java.lang.Enum.valueOf(T::class.java, type.replace(EMPTY_SPACE, CHAR_UNDERSCORE).uppercase())
+    return BaseEntity.asNullableEnum<T>(type) ?: value
 }
