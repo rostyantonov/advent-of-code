@@ -1,19 +1,26 @@
 package aoc.year2017
 
 import aoc.common.entity.HexPosition
-import aoc.common.entity.StringConstants.NORTH
-import aoc.common.entity.StringConstants.NORTH_EAST
-import aoc.common.entity.StringConstants.NORTH_WEST
-import aoc.common.entity.StringConstants.SOUTH
-import aoc.common.entity.StringConstants.SOUTH_EAST
-import aoc.common.entity.StringConstants.SOUTH_WEST
 import aoc.common.entity.walker.HexWalker
 import aoc.common.input.AoCFileInput
-import aoc.common.input.StringInput
+import aoc.common.input.StructuredInput
+import aoc.year2017.entity.HexDirection
+import aoc.year2017.entity.HexDirection.N
+import aoc.year2017.entity.HexDirection.NE
+import aoc.year2017.entity.HexDirection.NW
+import aoc.year2017.entity.HexDirection.S
+import aoc.year2017.entity.HexDirection.SE
+import aoc.year2017.entity.HexDirection.SW
+import aoc.year2017.entity.HexDirectionCompanion
 
-class Day11 : AoCFileInput<List<String>, Int>() {
+class Day11 : AoCFileInput<List<HexDirection>, Int>() {
     override val inputFunction
-        get() = StringInput::getFirstLineStringList
+        get() =
+            StructuredInput
+                .of(
+                    structure = HexDirectionCompanion,
+                    splitBy = ",",
+                )::getFirstLineStructInput
 
     /**
      * Crossing the bridge, you've barely reached the other side of the stream when a program comes up to you,
@@ -49,12 +56,12 @@ class Day11 : AoCFileInput<List<String>, Int>() {
         val hexWalker = HexWalker()
         input.groupBy { it }.map { it.key to it.value.size }.forEach {
             when (it.first) {
-                NORTH -> hexWalker.moveNorth(it.second)
-                SOUTH -> hexWalker.moveSouth(it.second)
-                NORTH_EAST -> hexWalker.moveNorthEast(it.second)
-                SOUTH_WEST -> hexWalker.moveSouthWest(it.second)
-                NORTH_WEST -> hexWalker.moveNorthWest(it.second)
-                SOUTH_EAST -> hexWalker.moveSouthEast(it.second)
+                N -> hexWalker.moveNorth(it.second)
+                S -> hexWalker.moveSouth(it.second)
+                NE -> hexWalker.moveNorthEast(it.second)
+                SW -> hexWalker.moveSouthWest(it.second)
+                NW -> hexWalker.moveNorthWest(it.second)
+                SE -> hexWalker.moveSouthEast(it.second)
             }
         }
         return hexWalker.hexPosition.manhattanDistance(HexPosition(0, 0, 0))
@@ -68,12 +75,12 @@ class Day11 : AoCFileInput<List<String>, Int>() {
         val hexWalker = HexWalker()
         input.forEach {
             when (it) {
-                NORTH -> hexWalker.moveNorth()
-                SOUTH -> hexWalker.moveSouth()
-                NORTH_EAST -> hexWalker.moveNorthEast()
-                SOUTH_WEST -> hexWalker.moveSouthWest()
-                NORTH_WEST -> hexWalker.moveNorthWest()
-                SOUTH_EAST -> hexWalker.moveSouthEast()
+                N -> hexWalker.moveNorth()
+                S -> hexWalker.moveSouth()
+                NE -> hexWalker.moveNorthEast()
+                SW -> hexWalker.moveSouthWest()
+                NW -> hexWalker.moveNorthWest()
+                SE -> hexWalker.moveSouthEast()
             }
         }
         return hexWalker.visitedPoints.maxOf { hexPosition -> hexPosition.manhattanDistance(HexPosition(0, 0, 0)) }
