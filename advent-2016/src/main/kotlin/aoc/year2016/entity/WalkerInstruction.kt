@@ -4,6 +4,6 @@ import aoc.ksp.GenerateStructure
 
 @GenerateStructure(lineBased = true)
 data class WalkerInstruction(
-    val direction: Char,
+    val direction: Turn,
     val steps: Int,
 )
