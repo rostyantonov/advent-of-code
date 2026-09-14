@@ -229,7 +229,9 @@ naming:
     excludeClassPattern: '$^'
   EnumNaming:
     active: true
-    enumEntryPattern: '[A-Z][_A-Z0-9]*'
+    # Upper camel case is allowed too: a constant matched by an @StructureName alias is named for
+    # what it means (Left) rather than for the token the input spells it with (L).
+    enumEntryPattern: '[A-Z][_a-zA-Z0-9]*'
   ForbiddenClassName:
     active: false
   FunctionMaxLength:
