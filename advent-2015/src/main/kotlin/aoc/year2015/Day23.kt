@@ -16,12 +16,12 @@ class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
                 .of(
                     regexArray =
                         arrayOf(
-                            AsmInstructionPatterns.HLF_REG,
-                            AsmInstructionPatterns.TPL_REG,
-                            AsmInstructionPatterns.INC_REG,
-                            AsmInstructionPatterns.JMP_REG,
-                            AsmInstructionPatterns.JIE_REG,
-                            AsmInstructionPatterns.JIO_REG,
+                            AsmInstructionPatterns.HALVE,
+                            AsmInstructionPatterns.TRIPLE,
+                            AsmInstructionPatterns.INCREMENT,
+                            AsmInstructionPatterns.JUMP,
+                            AsmInstructionPatterns.JUMP_IF_EVEN,
+                            AsmInstructionPatterns.JUMP_IF_ONE,
                         ),
                     structure = AsmInstructionCompanion,
                 )::getStructInput

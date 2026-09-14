@@ -15,13 +15,13 @@ class Day18 : AoCFileInput<List<AsmInstruction>, Int>() {
                 .of(
                     regexArray =
                         arrayOf(
-                            AsmInstructionPatterns.SND_REG,
-                            AsmInstructionPatterns.SET_REG,
-                            AsmInstructionPatterns.ADD_REG,
-                            AsmInstructionPatterns.MUL_REG,
-                            AsmInstructionPatterns.MOD_REG,
-                            AsmInstructionPatterns.RCV_REG,
-                            AsmInstructionPatterns.JGZ_REG,
+                            AsmInstructionPatterns.SEND,
+                            AsmInstructionPatterns.ASSIGN,
+                            AsmInstructionPatterns.ADD,
+                            AsmInstructionPatterns.MULTIPLY,
+                            AsmInstructionPatterns.MODULO,
+                            AsmInstructionPatterns.RECEIVE,
+                            AsmInstructionPatterns.JUMP_IF_POSITIVE,
                         ),
                     structure = AsmInstructionCompanion,
                 )::getStructInput
