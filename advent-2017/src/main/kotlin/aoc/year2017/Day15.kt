@@ -1,12 +1,19 @@
 package aoc.year2017
 
 import aoc.common.input.AoCFileInput
-import aoc.common.input.StringInput
+import aoc.common.input.StructuredInput
+import aoc.year2017.entity.DuelGenerator
+import aoc.year2017.entity.DuelGeneratorCompanion
 import kotlin.Int.Companion.MAX_VALUE
 
-class Day15 : AoCFileInput<List<String>, Int>() {
+class Day15 : AoCFileInput<List<DuelGenerator>, Int>() {
     override val inputFunction
-        get() = StringInput::asIs
+        get() =
+            StructuredInput
+                .of(
+                    regex = Regex("Generator \\w starts with (?<seed>\\d+)"),
+                    structure = DuelGeneratorCompanion,
+                )::getStructInput
 
     private val magicA = 16807
     private val magicB = 48271
@@ -63,8 +70,8 @@ class Day15 : AoCFileInput<List<String>, Int>() {
      * After 40 million pairs, what is the judge's final count?
      */
     override fun processPartOne(): Int {
-        val seedA = input[0].substring(24).toLong()
-        val seedB = input[1].substring(24).toLong()
+        val seedA = input[0].seed
+        val seedB = input[1].seed
 
         val aIterator =
             generateSequence(seedA) { (it * magicA) % MAX_VALUE }
@@ -146,8 +153,8 @@ class Day15 : AoCFileInput<List<String>, Int>() {
      * After 5 million pairs, but using this new generator logic, what is the judge's final count?
      */
     override fun processPartTwo(): Int {
-        val seedA = input[0].substring(24).toLong()
-        val seedB = input[1].substring(24).toLong()
+        val seedA = input[0].seed
+        val seedB = input[1].seed
         var count = 0
 
         val aIterator =
