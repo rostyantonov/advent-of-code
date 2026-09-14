@@ -4,8 +4,8 @@ import aoc.common.entity.Position
 import aoc.common.entity.walker.FacingWalker
 import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
-import aoc.year2016.entity.Turn.L
-import aoc.year2016.entity.Turn.R
+import aoc.year2016.entity.Turn.Left
+import aoc.year2016.entity.Turn.Right
 import aoc.year2016.entity.WalkerInstruction
 import aoc.year2016.entity.WalkerInstructionCompanion
 
@@ -57,8 +57,8 @@ class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
 
         for (instruction in input) {
             when (instruction.direction) {
-                L -> walker.turnLeft()
-                R -> walker.turnRight()
+                Left -> walker.turnLeft()
+                Right -> walker.turnRight()
             }
 
             // Walk step by step and check for duplicates during the walk
@@ -83,8 +83,8 @@ class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
         val walker = FacingWalker()
         instructions.forEach { instruction ->
             when (instruction.direction) {
-                L -> walker.turnLeft()
-                R -> walker.turnRight()
+                Left -> walker.turnLeft()
+                Right -> walker.turnRight()
             }
             walker.moveForward(instruction.steps)
         }
