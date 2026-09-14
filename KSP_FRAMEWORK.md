@@ -344,6 +344,26 @@ Enums need no step at all: `getAsEnum` is generic, so the processor recognises a
 - Classes with existing custom companion objects will be skipped (with a warning)
 - Only primary constructor parameters are processed
 - Regex named groups must match field names exactly
+- The annotated class must be top-level. Every mode but `multiStructure` also needs it to be a
+  concrete class; `multiStructure` needs a sealed class or sealed interface.
+
+## Diagnostics
+
+Every misuse is reported on the declaration that caused it rather than on a line in
+`build/generated`, and every message below is covered by a test in
+`ksp-processor/src/test/kotlin/aoc/ksp/StructureDiagnosticsTest.kt`.
+
+- Two generation modes requested at once, or a blank/unused `discriminatorField`, or negative skips
+- A target that is nested, abstract, not a class, or not sealed under `multiStructure`
+- A type with no getter and no `@FieldConverter`
+- A `@FieldConverter` whose `TypeConverter<T>` produces something other than the field's type
+- `@FromMatch` outside `customLine`/`lineBased`, a part that belongs to the other mode, or a part
+  on a parameter of the wrong type
+- `@FromMatch(ALL_MATCHES)` whose element type has no primary constructor taking a single `String`
+- `@StructureName` that is blank, duplicated across subclasses, or outside a `multiStructure`
+  hierarchy - where it would otherwise be a silent no-op
+- A `multiStructure` sealed class with no subclasses, a class with no primary constructor, or one
+  with no parameters
 
 ## Architecture
 

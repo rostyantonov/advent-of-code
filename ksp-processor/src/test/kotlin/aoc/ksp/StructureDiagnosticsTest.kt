@@ -343,6 +343,179 @@ class StructureDiagnosticsTest {
     }
 
     @Test
+    fun `an interface target is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Contract",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure
+                        interface Contract {
+                            val x: Int
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "@GenerateStructure must be on a class, but Contract is a")
+    }
+
+    @Test
+    fun `multiStructure on a class that is not sealed is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "NotSealed",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure(multiStructure = true)
+                        data class NotSealed(
+                            val x: Int,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "must be on a sealed class or interface, but NotSealed is neither")
+    }
+
+    @Test
+    fun `an abstract target is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Partial",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure
+                        abstract class Partial(
+                            val x: Int,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "cannot generate for the abstract class Partial")
+    }
+
+    @Test
+    fun `a nested target is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Outer",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        class Outer {
+                            @GenerateStructure
+                            data class Inner(
+                                val x: Int,
+                            )
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "must be on a top-level class, but Inner is nested")
+    }
+
+    @Test
+    fun `StructureName outside a multi-structure hierarchy is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Loner",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.StructureName"),
+                    body =
+                        """
+                        @StructureName("l")
+                        @GenerateStructure
+                        data class Loner(
+                            val x: Int,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "@StructureName on Loner has no effect")
+    }
+
+    @Test
+    fun `a converter that produces the wrong type is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Point",
+                    imports = listOf("aoc.ksp.BaseEntity", "aoc.ksp.TypeConverter"),
+                    body =
+                        """
+                        data class Point(val x: Int)
+
+                        data class Span(val from: Int)
+
+                        object PointConverter : TypeConverter<Point> {
+                            override fun convert(
+                                collection: MatchGroupCollection,
+                                fieldName: String,
+                            ): Point = Point(BaseEntity.getAsInt(collection, fieldName))
+                        }
+                        """.trimIndent(),
+                ),
+                entity(
+                    name = "Mismatched",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.FieldConverter"),
+                    body =
+                        """
+                        @GenerateStructure
+                        data class Mismatched(
+                            @FieldConverter(PointConverter::class)
+                            val start: Span,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "@FieldConverter(PointConverter) produces Point, but 'start' is Span")
+    }
+
+    @Test
+    fun `an ALL_MATCHES element with no single-String constructor is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Atom",
+                    body = "data class Atom(val weight: Int)",
+                ),
+                entity(
+                    name = "Molecule",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.FromMatch", "aoc.ksp.MatchPart"),
+                    body =
+                        """
+                        @GenerateStructure(customLine = true)
+                        data class Molecule(
+                            @FromMatch(MatchPart.ALL_MATCHES)
+                            val atoms: List<Atom>,
+                        )
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "Atom needs a primary constructor taking a single String")
+    }
+
+    @Test
     fun `a sealed hierarchy with no subclasses is rejected`() {
         val result =
             CompilationFixture.process(

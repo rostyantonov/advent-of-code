@@ -1,5 +1,6 @@
 package aoc.ksp
 
+import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -7,11 +8,13 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
 
 class StructureProcessor(
@@ -29,7 +32,34 @@ class StructureProcessor(
             .filter { it is KSClassDeclaration && it.validate() }
             .forEach { it.accept(StructureVisitor(), Unit) }
 
+        reportStrayStructureNames(resolver)
+
         return ret
+    }
+
+    /**
+     * `@StructureName` is only read while generating a multi-structure companion. Anywhere else it
+     * is a silent no-op, which reads as a working discriminator alias right up until the puzzle
+     * answer comes out wrong.
+     */
+    private fun reportStrayStructureNames(resolver: Resolver) {
+        resolver
+            .getSymbolsWithAnnotation(StructureName::class.qualifiedName!!)
+            .filterIsInstance<KSClassDeclaration>()
+            .filterNot { subclass ->
+                // Checked against the supertypes rather than the enclosing declaration: a sealed
+                // subclass is allowed to live outside its parent's body.
+                subclass.superTypes.any { supertype ->
+                    val declaration = supertype.resolve().declaration as? KSClassDeclaration
+                    declaration?.annotationNamed("GenerateStructure")?.argument<Boolean>("multiStructure") == true
+                }
+            }.forEach { subclass ->
+                logger.error(
+                    "@StructureName on ${subclass.simpleName.asString()} has no effect: it is only read for " +
+                        "subclasses of a @GenerateStructure(multiStructure=true) sealed class",
+                    subclass,
+                )
+            }
     }
 
     inner class StructureVisitor : KSVisitorVoid() {
@@ -56,6 +86,8 @@ class StructureProcessor(
             }
 
             val options = StructureOptions.from(classDeclaration, logger) ?: return
+
+            if (!isGeneratableTarget(classDeclaration, options)) return
 
             val parameters = constructorParameters(classDeclaration, options) ?: return
 
@@ -124,6 +156,61 @@ class StructureProcessor(
             file.bufferedWriter().use { writer -> writer.write(companionSource) }
 
             logger.info("Generated ${options.companionInterface} companion for $packageName.$className")
+        }
+
+        /**
+         * Whether the annotated declaration is a shape the templates can actually generate for.
+         *
+         * The templates address the entity as `packageName.simpleName`, so a nested target produces
+         * a companion that cannot name it. Every mode but multi-structure also calls the entity's
+         * own constructor, so it has to be a concrete class - multi-structure constructs the sealed
+         * subclasses instead, and its target is a sealed class or interface by definition.
+         *
+         * Getting this wrong used to surface as a compile error inside `build/generated` rather
+         * than on the declaration that caused it.
+         */
+        private fun isGeneratableTarget(
+            classDeclaration: KSClassDeclaration,
+            options: StructureOptions,
+        ): Boolean {
+            val className = classDeclaration.simpleName.asString()
+            val isSealed = Modifier.SEALED in classDeclaration.modifiers
+
+            if (options.multiStructure) {
+                if (!isSealed) {
+                    logger.error(
+                        "@GenerateStructure(multiStructure=true) must be on a sealed class or interface, " +
+                            "but $className is neither",
+                        classDeclaration,
+                    )
+                    return false
+                }
+            } else if (classDeclaration.classKind != ClassKind.CLASS) {
+                logger.error(
+                    "@GenerateStructure must be on a class, but $className is a " +
+                        "${classDeclaration.classKind.type}",
+                    classDeclaration,
+                )
+                return false
+            } else if (classDeclaration.isAbstract()) {
+                logger.error(
+                    "@GenerateStructure cannot generate for the abstract class $className: " +
+                        "there is no constructor to call",
+                    classDeclaration,
+                )
+                return false
+            }
+
+            if (classDeclaration.parentDeclaration != null) {
+                logger.error(
+                    "@GenerateStructure must be on a top-level class, but $className is nested; " +
+                        "the generated companion would not be able to name it",
+                    classDeclaration,
+                )
+                return false
+            }
+
+            return true
         }
 
         /**

@@ -35,6 +35,7 @@ internal class ParameterMappings(
 
         converterTypeOf(param)?.let { converterType ->
             val converterName = converterType.declaration.simpleName.asString()
+            reportConverterMismatch(param, converterType)
             return "$converterName.convert($receiver, \"$name\")"
         }
 
@@ -64,6 +65,47 @@ internal class ParameterMappings(
 
         val getter = if (isNullable) "getAsNullable$typeString" else "getAs$typeString"
         return "BaseEntity.$getter($receiver, \"$name\")"
+    }
+
+    /**
+     * Reports a `@FieldConverter` whose `TypeConverter<T>` produces something other than the
+     * parameter's own type.
+     *
+     * Without this the generated call simply fails to typecheck, and the error is reported against
+     * a line in `build/generated` rather than against the annotation that is wrong.
+     */
+    private fun reportConverterMismatch(
+        param: KSValueParameter,
+        converterType: KSType,
+    ) {
+        val declaration = converterType.declaration as? KSClassDeclaration ?: return
+
+        val produced =
+            declaration.superTypes
+                .map { it.resolve() }
+                .firstOrNull { it.declaration.simpleName.asString() == "TypeConverter" }
+                ?.arguments
+                ?.firstOrNull()
+                ?.type
+                ?.resolve()
+                ?.declaration
+                ?.qualifiedName
+                ?.asString() ?: return
+
+        val expected =
+            param.type
+                .resolve()
+                .declaration.qualifiedName
+                ?.asString() ?: return
+
+        if (produced != expected) {
+            logger.error(
+                "@FieldConverter(${declaration.simpleName.asString()}) produces " +
+                    "${produced.substringAfterLast('.')}, but '${param.name?.asString()}' is " +
+                    expected.substringAfterLast('.'),
+                param,
+            )
+        }
     }
 
     /**
@@ -283,21 +325,42 @@ internal class ParameterMappings(
             return "TODO(\"$name\")"
         }
 
-        val innerType =
+        val element =
             type.arguments
                 .firstOrNull()
                 ?.type
                 ?.resolve()
                 ?.declaration
-                ?.simpleName
-                ?.asString()
                 ?: run {
                     logger.error("@FromMatch(ALL_MATCHES) needs a List<T> element type on '$name'", param)
                     return "TODO(\"$name\")"
                 }
 
-        // The element type is constructed from the match text, so it needs a constructor taking a
-        // single String.
+        val innerType = element.simpleName.asString()
+
+        // The element is constructed straight from the match text, so a constructor taking one
+        // String is the whole contract - checked here so a mismatch is reported on the parameter
+        // rather than inside the generated file.
+        val constructor = (element as? KSClassDeclaration)?.primaryConstructor
+        val takesOneString =
+            constructor
+                ?.parameters
+                ?.singleOrNull()
+                ?.type
+                ?.resolve()
+                ?.declaration
+                ?.simpleName
+                ?.asString() == "String"
+
+        if (!takesOneString) {
+            logger.error(
+                "@FromMatch(ALL_MATCHES) builds each element from the match text, so $innerType needs " +
+                    "a primary constructor taking a single String",
+                param,
+            )
+            return "TODO(\"$name\")"
+        }
+
         return "collection.toList().map { $innerType(it.value) }"
     }
 }
