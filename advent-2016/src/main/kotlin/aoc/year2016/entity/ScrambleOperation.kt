@@ -23,17 +23,15 @@ sealed class ScrambleOperation {
     }
 
     data class Letter(
-        val x: String,
-        val y: String,
+        val x: Char,
+        val y: Char,
     ) : ScrambleOperation() {
         override fun execute(chars: CharArray): CharArray {
             val result = chars.copyOf()
-            val xChar = x[0]
-            val yChar = y[0]
             for (i in result.indices) {
                 when (result[i]) {
-                    xChar -> result[i] = yChar
-                    yChar -> result[i] = xChar
+                    x -> result[i] = y
+                    y -> result[i] = x
                 }
             }
             return result
@@ -105,11 +103,10 @@ sealed class ScrambleOperation {
     }
 
     data class Based(
-        val letter: String,
+        val letter: Char,
     ) : ScrambleOperation() {
         override fun execute(chars: CharArray): CharArray {
-            val letterChar = letter[0]
-            val index = chars.indexOf(letterChar)
+            val index = chars.indexOf(letter)
             val rotations = 1 + index + (if (index >= 4) 1 else 0)
             // Rotate right
             val n = chars.size
@@ -126,8 +123,7 @@ sealed class ScrambleOperation {
 
         override fun reverse(chars: CharArray): CharArray {
             // To reverse, we need to find what the original position was
-            val letterChar = letter[0]
-            val currentIndex = chars.indexOf(letterChar)
+            val currentIndex = chars.indexOf(letter)
 
             for (originalIndex in chars.indices) {
                 val rotations = 1 + originalIndex + (if (originalIndex >= 4) 1 else 0)
