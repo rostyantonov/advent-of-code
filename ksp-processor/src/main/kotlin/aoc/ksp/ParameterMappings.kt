@@ -1,0 +1,280 @@
+package aoc.ksp
+
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSValueParameter
+
+/**
+ * The parameter types [BaseEntity] declares getters for.
+ *
+ * Single source of truth: [ParameterMappings.getterExpression] checks against it and
+ * [CompanionTemplates] documents it in the generated KDoc, so the two cannot drift.
+ */
+internal val SUPPORTED_TYPES = listOf("Int", "String", "Char")
+
+/**
+ * Turns constructor parameters into the expressions that produce their values.
+ *
+ * Every generation mode routes through here, so the supported types and the converter handling
+ * cannot differ between a standard entity and a sealed subclass branch.
+ */
+internal class ParameterMappings(
+    private val logger: KSPLogger,
+) {
+    /**
+     * The single source of truth for turning a constructor parameter into the expression that
+     * produces its value.
+     */
+    fun getterExpression(
+        param: KSValueParameter,
+        receiver: String = "collection",
+    ): String {
+        val name = param.name?.asString() ?: "unknown"
+
+        converterTypeOf(param)?.let { converterType ->
+            val converterName = converterType.declaration.simpleName.asString()
+            return "$converterName.convert($receiver, \"$name\")"
+        }
+
+        val type = param.type.resolve()
+        val typeString = type.declaration.simpleName.asString()
+        val isNullable = type.isMarkedNullable
+
+        if (typeString !in SUPPORTED_TYPES) {
+            val rendered = "$typeString${if (isNullable) "?" else ""}"
+            logger.error(
+                "Unsupported type: $rendered for parameter $name. " +
+                    "Supported types: ${SUPPORTED_TYPES.joinToString(", ")} (and nullable variants). " +
+                    "For custom types, use @FieldConverter annotation with a TypeConverter implementation.",
+                param,
+            )
+            // Return a placeholder that will cause a compile error with a clear message
+            return "TODO(\"Add @FieldConverter for $rendered or add support in BaseEntity\")"
+        }
+
+        val getter = if (isNullable) "getAsNullable$typeString" else "getAs$typeString"
+        return "BaseEntity.$getter($receiver, \"$name\")"
+    }
+
+    /** The [TypeConverter] a parameter's `@FieldConverter` names, or null when it has none. */
+    fun converterTypeOf(param: KSValueParameter): KSType? =
+        param.annotationNamed("FieldConverter")?.argument<KSType>("converter")
+
+    /**
+     * The `MatchPart` name an explicit `@FromMatch` asks for, or `null` when the parameter is read
+     * from a named group like every other one.
+     */
+    fun matchPartOf(param: KSValueParameter): String? {
+        val part =
+            param
+                .annotationNamed("FromMatch")
+                ?.arguments
+                ?.find { it.name?.asString() == "part" }
+                ?.value
+                ?: return null
+
+        return when (part) {
+            is KSType -> part.declaration.simpleName.asString()
+            is KSClassDeclaration -> part.simpleName.asString()
+            else -> part.toString().substringAfterLast('.')
+        }
+    }
+
+    fun standard(parameters: List<KSValueParameter>): String =
+        parameters.joinToString(",\n") { param ->
+            "            ${param.name?.asString() ?: "unknown"} = ${getterExpression(param)}"
+        }
+
+    /**
+     * Custom-line companions get the raw line plus the whole match sequence, neither of which is a
+     * named group, so every parameter has to say where it comes from via `@FromMatch`.
+     */
+    fun customLine(parameters: List<KSValueParameter>): String =
+        parameters.joinToString(",\n") { param ->
+            val name = param.name?.asString() ?: "unknown"
+            val type = param.type.resolve()
+            val typeString = type.declaration.simpleName.asString()
+
+            val expression =
+                when (val part = matchPartOf(param)) {
+                    "LINE" ->
+                        if (typeString == "String") {
+                            "line"
+                        } else {
+                            logger.error(
+                                "@FromMatch(LINE) needs a String parameter, but '$name' is '$typeString'",
+                                param,
+                            )
+                            "TODO(\"$name\")"
+                        }
+
+                    "ALL_MATCHES" -> allMatchesExpression(param, name, type, typeString)
+
+                    else -> {
+                        val detail =
+                            if (part == null) {
+                                "is missing @FromMatch"
+                            } else {
+                                "uses @FromMatch($part), which is not valid here"
+                            }
+                        logger.error(
+                            "@GenerateStructure(customLine=true): parameter '$name' $detail; " +
+                                "use MatchPart.LINE or MatchPart.ALL_MATCHES",
+                            param,
+                        )
+                        "TODO(\"$name\")"
+                    }
+                }
+
+            "            $name = $expression"
+        }
+
+    /**
+     * Line-based companions receive a `MatchResult` rather than a `MatchGroupCollection`, so the
+     * accessors read from `collection.groups`. A parameter annotated `@FromMatch(RANGE)` is mapped
+     * to the match's own position in the line, which has no equivalent named group.
+     */
+    fun lineBased(parameters: List<KSValueParameter>): String =
+        parameters.joinToString(",\n") { param ->
+            val name = param.name?.asString() ?: "unknown"
+            val typeString =
+                param.type
+                    .resolve()
+                    .declaration.simpleName
+                    .asString()
+
+            val expression =
+                when (val part = matchPartOf(param)) {
+                    null -> getterExpression(param, receiver = "collection.groups")
+
+                    "RANGE" ->
+                        if (typeString == "IntRange") {
+                            "collection.range"
+                        } else {
+                            logger.error(
+                                "@FromMatch(RANGE) needs an IntRange parameter, but '$name' is '$typeString'",
+                                param,
+                            )
+                            "TODO(\"$name\")"
+                        }
+
+                    else -> {
+                        logger.error(
+                            "@FromMatch($part) is not valid with lineBased=true; parameter '$name' " +
+                                "can only use MatchPart.RANGE or a named group",
+                            param,
+                        )
+                        "TODO(\"$name\")"
+                    }
+                }
+
+            "            $name = $expression"
+        }
+
+    /**
+     * The discriminator token each sealed subclass answers to.
+     *
+     * The default is the subclass simple name uppercased (Hlf -> HLF), which matches the runtime
+     * discriminator because the generated `create` uppercases the group value too. An optional
+     * `@StructureName("s")` overrides it, so a readable class name (Spin) can be matched by the
+     * short token the input actually carries ("s").
+     */
+    fun discriminatorTokens(subclasses: List<KSClassDeclaration>): Map<KSClassDeclaration, String> {
+        val tokens = LinkedHashMap<KSClassDeclaration, String>()
+
+        subclasses.forEach { subclass ->
+            val subclassName = subclass.simpleName.asString()
+            val alias = subclass.annotationNamed("StructureName")?.argument<String>("value")
+
+            val token =
+                if (alias != null && alias.isBlank()) {
+                    logger.error(
+                        "@StructureName on $subclassName must not be blank, falling back to the class name",
+                        subclass,
+                    )
+                    subclassName.uppercase()
+                } else {
+                    (alias ?: subclassName).uppercase()
+                }
+
+            // Two subclasses answering to one token is a silent wrong answer at runtime: the
+            // `when` picks the first case and the second is unreachable.
+            tokens.entries.find { it.value == token }?.let { clash ->
+                logger.error(
+                    "Discriminator token \"$token\" is already used by ${clash.key.simpleName.asString()}. " +
+                        "Give $subclassName a distinct @StructureName value.",
+                    subclass,
+                )
+            }
+
+            tokens[subclass] = token
+        }
+
+        return tokens
+    }
+
+    fun sealedSubclassCases(
+        tokenBySubclass: Map<KSClassDeclaration, String>,
+        className: String,
+    ): String =
+        tokenBySubclass.entries.joinToString("\n\n") { (subclass, discriminatorValue) ->
+            val subclassName = subclass.simpleName.asString()
+
+            val parameters = subclass.primaryConstructor?.parameters ?: emptyList()
+
+            // Parameters with a default value are left to the constructor unless an explicit
+            // converter says how to read them, so subclasses can carry state the regex never sets.
+            val paramsList =
+                parameters.mapNotNull { param ->
+                    if (param.hasDefault && converterTypeOf(param) == null) {
+                        null
+                    } else {
+                        "                    ${param.name!!.asString()} = ${getterExpression(param)}"
+                    }
+                }
+
+            val parameterMappings =
+                when {
+                    // An object or a parameterless subclass is referenced by name alone.
+                    parameters.isEmpty() -> ""
+                    // Every parameter was defaulted away, but the constructor still needs a call.
+                    paramsList.isEmpty() -> "()"
+                    else -> "(\n${paramsList.joinToString(",\n")},\n                )"
+                }
+
+            "            \"$discriminatorValue\" -> {\n                $className.$subclassName$parameterMappings\n            }"
+        }
+
+    private fun allMatchesExpression(
+        param: KSValueParameter,
+        name: String,
+        type: KSType,
+        typeString: String,
+    ): String {
+        if (typeString != "List") {
+            logger.error(
+                "@FromMatch(ALL_MATCHES) needs a List parameter, but '$name' is '$typeString'",
+                param,
+            )
+            return "TODO(\"$name\")"
+        }
+
+        val innerType =
+            type.arguments
+                .firstOrNull()
+                ?.type
+                ?.resolve()
+                ?.declaration
+                ?.simpleName
+                ?.asString()
+                ?: run {
+                    logger.error("@FromMatch(ALL_MATCHES) needs a List<T> element type on '$name'", param)
+                    return "TODO(\"$name\")"
+                }
+
+        // The element type is constructed from the match text, so it needs a constructor taking a
+        // single String.
+        return "collection.toList().map { $innerType(it.value) }"
+    }
+}
