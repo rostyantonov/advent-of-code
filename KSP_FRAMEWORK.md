@@ -9,7 +9,7 @@ The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to a
 ## Features
 
 - **Automatic Implementation Generation**: Annotate your data class and get a complete companion object
-- **Multiple Patterns**: Supports standard, line-based, custom line, and multi-structure patterns
+- **Multiple Patterns**: Supports standard, line-based, custom line, multi-structure and enum patterns
 - **Type Support**: Supports Int, Long, Boolean, String, Char and any enum (nullable and
   non-nullable) in every mode
 - **Field Name Mapping**: Automatically maps regex named groups to field names
@@ -116,6 +116,44 @@ sealed class DanceMove {
 `@StructureName` is entirely optional — subclasses without it keep using their class name, so
 existing entities need no changes. Values are matched case-insensitively (`"s"` and `"S"` are
 equivalent), and two subclasses resolving to the same token is a compile-time error.
+
+### Enum Mode (IStructureEnum)
+
+Annotate an enum class when the input element *is* the constant, with nothing around it to put in a
+data class:
+
+```kotlin
+@GenerateStructure
+enum class HexDirection { N, NE, SE, S, SW, NW }
+// "ne" -> HexDirection.NE
+```
+
+This is the only mode where the regex is optional, because there is no named group to read — the
+whole token is matched against the constant names, ignoring case and reading spaces as underscores.
+A token that matches nothing throws rather than parsing as null. The enum's own constructor is
+ignored, so constants may carry data (`enum class Spell(val cost: Int)`) and still be parsed.
+
+Do not confuse this with an enum **field**, which needs no mode at all and has been supported all
+along:
+
+```kotlin
+@GenerateStructure
+data class Instruction(val cmd: Command, val amount: Int)   // cmd is a field, not the entity
+```
+
+Because such tokens usually arrive packed into one line, `StructuredInput.of` takes a `splitBy`
+separator here and exposes `getFirstLineStructInput`, matching what `StructuredMultiInput` already
+does:
+
+```kotlin
+override val inputFunction
+    get() =
+        StructuredInput
+            .of(
+                structure = HexDirectionCompanion,
+                splitBy = ",",
+            )::getFirstLineStructInput
+```
 
 ## Usage
 
@@ -228,12 +266,14 @@ trimming that belongs to one puzzle rather than to the entity.
 \*\* Strictly `true` or `false`; anything else is a missing value rather than a silent `false`.
 
 \*\*\* Any enum works without a converter. The group value is matched against the constant names
-ignoring case, with spaces read as underscores (`turn on` -> `TURN_ON`), mirroring
-`aoc.common.util.safeValue`. A `@FieldConverter` on an enum field still wins, which is how
-`BitOperationConverter` keeps its `DIRECT` fallback for an absent group.
+ignoring case, with spaces read as underscores (`turn on` -> `TURN_ON`). A `@FieldConverter` on an
+enum field still wins, which is how `BitOperationConverter` keeps its `DIRECT` fallback for an
+absent group. The same matching resolves a whole enum entity — see
+[Enum Mode](#enum-mode-istructureenum) — because both routes go through
+`BaseEntity.asNullableEnum`.
 
-All four generation modes support the same set of types. Anything else is a compile-time error
-pointing you at `@FieldConverter` or `BaseEntity`.
+The four field-based generation modes support the same set of types. Anything else is a compile-time
+error pointing you at `@FieldConverter` or `BaseEntity`.
 
 ## Custom Type Converters
 
@@ -348,8 +388,9 @@ Enums need no step at all: `getAsEnum` is generic, so the processor recognises a
 - Classes with existing custom companion objects will be skipped (with a warning)
 - Only primary constructor parameters are processed
 - Regex named groups must match field names exactly
-- The annotated class must be top-level. Every mode but `multiStructure` also needs it to be a
-  concrete class; `multiStructure` needs a sealed class or sealed interface.
+- The annotated class must be top-level. The field-based modes need a concrete class;
+  `multiStructure` needs a sealed class or sealed interface; enum mode needs an enum class, and
+  rejects the mode flags because it has no constructor to fill.
 
 ## Diagnostics
 

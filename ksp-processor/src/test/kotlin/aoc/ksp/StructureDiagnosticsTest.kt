@@ -364,6 +364,46 @@ class StructureDiagnosticsTest {
     }
 
     @Test
+    fun `a mode flag on an enum is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Overspecified",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure(lineBased = true)
+                        enum class Overspecified { A, B }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "lineBased has no meaning on the enum Overspecified")
+    }
+
+    @Test
+    fun `a nested enum is rejected like any other nested target`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Outer",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        class Outer {
+                            @GenerateStructure
+                            enum class Inner { A, B }
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "must be on a top-level class, but Inner is nested")
+    }
+
+    @Test
     fun `multiStructure on a class that is not sealed is rejected`() {
         val result =
             CompilationFixture.process(

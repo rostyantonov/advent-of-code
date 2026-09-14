@@ -1,6 +1,7 @@
 package aoc.ksp
 
 import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -28,6 +29,7 @@ internal data class StructureOptions(
     val customLine: Boolean,
     val multiStructure: Boolean,
     val lineBased: Boolean,
+    val isEnum: Boolean,
     val discriminatorField: String,
     val skipHeaderLines: Int,
     val skipFooterLines: Int,
@@ -36,6 +38,7 @@ internal data class StructureOptions(
     val companionInterface: String
         get() =
             when {
+                isEnum -> "IStructureEnum"
                 multiStructure -> "IStructureMulti"
                 customLine -> "IStructureCustomLine"
                 lineBased -> "IStructureLine"
@@ -57,6 +60,9 @@ internal data class StructureOptions(
                     customLine = annotation?.argument<Boolean>("customLine") ?: false,
                     multiStructure = annotation?.argument<Boolean>("multiStructure") ?: false,
                     lineBased = annotation?.argument<Boolean>("lineBased") ?: false,
+                    // Read off the class kind rather than from an annotation argument: an enum
+                    // cannot be mistaken for anything else, and a flag could contradict it.
+                    isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS,
                     discriminatorField = annotation?.argument<String>("discriminatorField") ?: DEFAULT_DISCRIMINATOR,
                     skipHeaderLines = annotation?.argument<Int>("skipHeaderLines") ?: 0,
                     skipFooterLines = annotation?.argument<Int>("skipFooterLines") ?: 0,
@@ -75,6 +81,17 @@ internal data class StructureOptions(
             if (requestedModes.size > 1) {
                 logger.error(
                     "@GenerateStructure: ${requestedModes.joinToString(" and ")} are mutually exclusive on $className",
+                    classDeclaration,
+                )
+                return null
+            }
+
+            // An enum entity has no constructor parameters to read, so every other mode's template
+            // would generate a call to a constructor that does not exist.
+            if (options.isEnum && requestedModes.isNotEmpty()) {
+                logger.error(
+                    "@GenerateStructure: ${requestedModes.single()} has no meaning on the enum $className; " +
+                        "an enum is parsed from its whole token",
                     classDeclaration,
                 )
                 return null

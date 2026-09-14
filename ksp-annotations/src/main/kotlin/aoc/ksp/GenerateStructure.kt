@@ -9,6 +9,7 @@ package aoc.ksp
  * - Processes the entire line and match sequence (when customLine=true)
  * - Handles sealed classes with multiple regex patterns (when multiStructure=true)
  * - Finds all matches in a line and returns a list (when lineBased=true)
+ * - Resolves the whole token to a constant (when the annotated class is an enum)
  * - Supports Int, String, Char (and nullable variants), or any type with a @FieldConverter
  *
  * @param customLine If true, generates IStructureCustomLine<T> with create(line, collection: Sequence<MatchResult>)
@@ -60,6 +61,14 @@ package aoc.ksp
  *     val steps: Int,
  * )
  * // Parses "R3, L5, R2" -> List(WalkerInstruction('R', 3), WalkerInstruction('L', 5), WalkerInstruction('R', 2))
+ * ```
+ *
+ * Example (enum entity):
+ * ```
+ * @GenerateStructure
+ * enum class HexDirection { N, NE, SE, S, SW, NW }
+ * // Parses "ne" -> HexDirection.NE; no regex and no named group, the token is the constant.
+ * // An enum *field* of a data class needs none of this - it has been supported all along.
  * ```
  *
  * Example (with headers):

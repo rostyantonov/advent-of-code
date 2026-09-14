@@ -137,6 +137,9 @@ class StructureProcessor(
 
             val companionSource =
                 when {
+                    options.isEnum ->
+                        templates.enumEntity(packageName, className, firstEnumConstant(classDeclaration), skips)
+
                     options.multiStructure ->
                         templates.multiStructure(
                             packageName,
@@ -157,6 +160,19 @@ class StructureProcessor(
 
             logger.info("Generated ${options.companionInterface} companion for $packageName.$className")
         }
+
+        /**
+         * The first constant of an enum entity, used only to write a usage example into the generated
+         * KDoc that names a token the enum really accepts. An enum with no constants parses nothing,
+         * so the example falls back to the class name.
+         */
+        private fun firstEnumConstant(classDeclaration: KSClassDeclaration): String =
+            classDeclaration.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .firstOrNull { it.classKind == ClassKind.ENUM_ENTRY }
+                ?.simpleName
+                ?.asString()
+                ?: classDeclaration.simpleName.asString()
 
         /**
          * Whether the annotated declaration is a shape the templates can actually generate for.
@@ -185,6 +201,10 @@ class StructureProcessor(
                     )
                     return false
                 }
+            } else if (options.isEnum) {
+                // An enum entity is constructed by matching its constants, not by calling anything,
+                // so the concrete-class rule below does not apply to it.
+                Unit
             } else if (classDeclaration.classKind != ClassKind.CLASS) {
                 logger.error(
                     "@GenerateStructure must be on a class, but $className is a " +
@@ -216,13 +236,15 @@ class StructureProcessor(
         /**
          * The parameters the generated `create` has to fill, or null when the class cannot supply
          * any. A multi-structure hierarchy reads its parameters off the subclasses instead, so the
-         * sealed parent itself is allowed to have no constructor at all.
+         * sealed parent itself is allowed to have no constructor at all. An enum entity reads
+         * nothing: its constructor carries data belonging to the constants (`Spell(val cost: Int)`),
+         * which has nothing to do with parsing.
          */
         private fun constructorParameters(
             classDeclaration: KSClassDeclaration,
             options: StructureOptions,
         ): List<KSValueParameter>? {
-            if (options.multiStructure) return emptyList()
+            if (options.multiStructure || options.isEnum) return emptyList()
 
             val constructor = classDeclaration.primaryConstructor
             if (constructor == null) {

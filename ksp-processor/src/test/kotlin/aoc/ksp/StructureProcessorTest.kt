@@ -298,6 +298,54 @@ class StructureProcessorTest {
     }
 
     @Test
+    fun `an enum entity is parsed from its whole token`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "HexDirection",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure
+                        enum class HexDirection { N, NE, SE, S, SW, NW }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("HexDirection"))
+        assertContains(companion, "object HexDirectionCompanion : IStructureEnum<HexDirection>")
+        assertContains(companion, "override fun create(token: String): HexDirection")
+        assertContains(companion, "BaseEntity.asEnum<HexDirection>(token)")
+    }
+
+    @Test
+    fun `an enum entity whose constants carry data ignores the constructor`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Spell",
+                    imports = listOf("aoc.ksp.GenerateStructure"),
+                    body =
+                        """
+                        @GenerateStructure
+                        enum class Spell(val cost: Int) {
+                            MAGIC_MISSILE(53),
+                            DRAIN(73),
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Spell"))
+        assertContains(companion, "BaseEntity.asEnum<Spell>(token)")
+        // The cost belongs to the constants, not to the parsing; reading it as a group would
+        // demand a (?<cost>) the input never carries.
+        assertFalse(companion.contains("cost"), companion)
+    }
+
+    @Test
     fun `multi-structure mode routes on the uppercased subclass name`() {
         val result =
             CompilationFixture.process(
