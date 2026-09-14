@@ -32,20 +32,25 @@ class StructureProcessor(
             .filter { it is KSClassDeclaration && it.validate() }
             .forEach { it.accept(StructureVisitor(), Unit) }
 
-        reportStrayStructureNames(resolver)
+        val aliased =
+            resolver
+                .getSymbolsWithAnnotation(StructureName::class.qualifiedName!!)
+                .filterIsInstance<KSClassDeclaration>()
+                .toList()
+
+        reportStrayStructureNames(aliased.filter { it.classKind != ClassKind.ENUM_ENTRY })
+        reportEnumTokenClashes(aliased.filter { it.classKind == ClassKind.ENUM_ENTRY })
 
         return ret
     }
 
     /**
-     * `@StructureName` is only read while generating a multi-structure companion. Anywhere else it
-     * is a silent no-op, which reads as a working discriminator alias right up until the puzzle
-     * answer comes out wrong.
+     * `@StructureName` is read while generating a multi-structure companion and while matching an
+     * enum constant. Anywhere else it is a silent no-op, which reads as a working alias right up
+     * until the puzzle answer comes out wrong.
      */
-    private fun reportStrayStructureNames(resolver: Resolver) {
-        resolver
-            .getSymbolsWithAnnotation(StructureName::class.qualifiedName!!)
-            .filterIsInstance<KSClassDeclaration>()
+    private fun reportStrayStructureNames(aliased: List<KSClassDeclaration>) {
+        aliased
             .filterNot { subclass ->
                 // Checked against the supertypes rather than the enclosing declaration: a sealed
                 // subclass is allowed to live outside its parent's body.
@@ -56,9 +61,52 @@ class StructureProcessor(
             }.forEach { subclass ->
                 logger.error(
                     "@StructureName on ${subclass.simpleName.asString()} has no effect: it is only read for " +
-                        "subclasses of a @GenerateStructure(multiStructure=true) sealed class",
+                        "enum constants and for subclasses of a @GenerateStructure(multiStructure=true) sealed class",
                     subclass,
                 )
+            }
+    }
+
+    /**
+     * Checks the tokens of every enum that aliases at least one of its constants.
+     *
+     * `BaseEntity` folds constant names and aliases onto one token space at runtime, so a blank
+     * alias or two constants claiming one token is a constant that can never be parsed. Unlike the
+     * discriminator tokens this is checked here rather than in [ParameterMappings]: an aliased enum
+     * is matched reflectively and may be read by a companion in another module, so the enum itself
+     * is the only place both constants are always in view.
+     */
+    private fun reportEnumTokenClashes(aliasedEntries: List<KSClassDeclaration>) {
+        aliasedEntries
+            .mapNotNull { it.parentDeclaration as? KSClassDeclaration }
+            .distinct()
+            .forEach { enumClass ->
+                val tokens = LinkedHashMap<String, KSClassDeclaration>()
+
+                enumClass.declarations
+                    .filterIsInstance<KSClassDeclaration>()
+                    .filter { it.classKind == ClassKind.ENUM_ENTRY }
+                    .forEach { entry ->
+                        val entryName = entry.simpleName.asString()
+                        val alias = entry.annotationNamed("StructureName")?.argument<String>("value")
+
+                        if (alias != null && alias.isBlank()) {
+                            logger.error(
+                                "@StructureName on $entryName must not be blank, falling back to the constant name",
+                                entry,
+                            )
+                        }
+
+                        val token = BaseEntity.normaliseToken(alias?.takeUnless { it.isBlank() } ?: entryName)
+
+                        tokens.put(token, entry)?.let { clash ->
+                            logger.error(
+                                "Token \"$token\" is already used by ${clash.simpleName.asString()}. " +
+                                    "Give $entryName a distinct @StructureName value.",
+                                entry,
+                            )
+                        }
+                    }
             }
     }
 
@@ -137,8 +185,10 @@ class StructureProcessor(
 
             val companionSource =
                 when {
-                    options.isEnum ->
-                        templates.enumEntity(packageName, className, firstEnumConstant(classDeclaration), skips)
+                    options.isEnum -> {
+                        val sample = firstEnumConstant(classDeclaration)
+                        templates.enumEntity(packageName, className, sample.constant, sample.token, skips)
+                    }
 
                     options.multiStructure ->
                         templates.multiStructure(
@@ -162,17 +212,24 @@ class StructureProcessor(
         }
 
         /**
-         * The first constant of an enum entity, used only to write a usage example into the generated
-         * KDoc that names a token the enum really accepts. An enum with no constants parses nothing,
-         * so the example falls back to the class name.
+         * The first constant of an enum entity and the token that reaches it, used only to write a
+         * usage example into the generated KDoc. An enum with no constants parses nothing, so the
+         * example falls back to the class name.
          */
-        private fun firstEnumConstant(classDeclaration: KSClassDeclaration): String =
-            classDeclaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .firstOrNull { it.classKind == ClassKind.ENUM_ENTRY }
-                ?.simpleName
-                ?.asString()
-                ?: classDeclaration.simpleName.asString()
+        private fun firstEnumConstant(classDeclaration: KSClassDeclaration): EnumSample {
+            val entry =
+                classDeclaration.declarations
+                    .filterIsInstance<KSClassDeclaration>()
+                    .firstOrNull { it.classKind == ClassKind.ENUM_ENTRY }
+                    ?: return EnumSample(classDeclaration.simpleName.asString(), classDeclaration.simpleName.asString())
+
+            val constant = entry.simpleName.asString()
+            val alias = entry.annotationNamed("StructureName")?.argument<String>("value")
+
+            // An aliased constant is reached only by its alias, so the example has to spell that;
+            // an unaliased one reads back the way input tends to spell a constant name.
+            return EnumSample(constant, alias ?: constant.lowercase().replace('_', ' '))
+        }
 
         /**
          * Whether the annotated declaration is a shape the templates can actually generate for.
@@ -261,6 +318,12 @@ class StructureProcessor(
         }
     }
 }
+
+/** A constant of an enum entity paired with the input token that reaches it. */
+private data class EnumSample(
+    val constant: String,
+    val token: String,
+)
 
 /**
  * Provider for StructureProcessor

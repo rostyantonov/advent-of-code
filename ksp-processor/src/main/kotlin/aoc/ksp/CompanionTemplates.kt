@@ -32,7 +32,8 @@ internal class CompanionTemplates(
             | *
             | * Supported field types:
             | * - $supportedTypesDoc
-            | * - Any enum, matched by name ignoring case, with spaces read as underscores
+            | * - Any enum, matched by name ignoring case, with spaces read as underscores,
+            | *   or by the token an @StructureName constant names instead
             | * - Nullable variants of all types above
             | * - Custom types with @FieldConverter annotation
             | *
@@ -55,18 +56,18 @@ internal class CompanionTemplates(
     /**
      * The smallest of the templates: an enum entity has no parameters to map and names nothing that
      * needs importing, because the constant it produces is the annotated class itself.
+     *
+     * [sampleToken] is spelled the way input would spell [sampleConstant], so the generated example
+     * names a token the enum really accepts rather than an invented one.
      */
     fun enumEntity(
         packageName: String,
         className: String,
         sampleConstant: String,
+        sampleToken: String,
         skips: String,
-    ): String {
-        // The example reads back the way the input would spell that constant, so the doc names a
-        // token the enum actually accepts rather than an invented one.
-        val sampleToken = sampleConstant.lowercase().replace('_', ' ')
-
-        return """
+    ): String =
+        """
             |package $packageName
             |
             |import aoc.ksp.BaseEntity
@@ -77,7 +78,8 @@ internal class CompanionTemplates(
             | * Standalone companion object that implements IStructureEnum<$className>
             | *
             | * The whole input token is the constant, matched by name ignoring case and with spaces
-            | * read as underscores, so no named group and no regex are needed.
+            | * read as underscores - or by the token an @StructureName constant names instead - so
+            | * no named group and no regex are needed.
             | *
             | * Usage: ${className}Companion.fromLine(line)
             | * Example:
@@ -89,8 +91,7 @@ internal class CompanionTemplates(
             |    override fun create(token: String): $className = BaseEntity.asEnum<$className>(token)
             |}
             |
-            """.trimMargin()
-    }
+        """.trimMargin()
 
     fun customLine(
         packageName: String,
@@ -150,7 +151,8 @@ internal class CompanionTemplates(
             | *
             | * Supported field types:
             | * - $supportedTypesDoc
-            | * - Any enum, matched by name ignoring case, with spaces read as underscores
+            | * - Any enum, matched by name ignoring case, with spaces read as underscores,
+            | *   or by the token an @StructureName constant names instead
             | * - Nullable variants of all types above
             | * - IntRange annotated @FromMatch(MatchPart.RANGE), mapped to the match's own range
             | * - Custom types with @FieldConverter annotation

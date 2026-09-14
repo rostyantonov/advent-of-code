@@ -469,6 +469,52 @@ class StructureDiagnosticsTest {
     }
 
     @Test
+    fun `two enum constants claiming the same token is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Clashing",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.StructureName"),
+                    body =
+                        """
+                        @GenerateStructure
+                        enum class Clashing {
+                            @StructureName("l")
+                            Left,
+
+                            L,
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, """Token "L" is already used by Left""")
+    }
+
+    @Test
+    fun `a blank StructureName on an enum constant is rejected`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Nameless",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.StructureName"),
+                    body =
+                        """
+                        @GenerateStructure
+                        enum class Nameless {
+                            @StructureName("  ")
+                            Left,
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertFalse(result.succeeded)
+        assertContains(result.messages, "@StructureName on Left must not be blank")
+    }
+
+    @Test
     fun `StructureName outside a multi-structure hierarchy is rejected`() {
         val result =
             CompilationFixture.process(

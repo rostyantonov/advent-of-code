@@ -14,8 +14,8 @@ The `@GenerateStructure` annotation triggers KSP (Kotlin Symbol Processing) to a
   non-nullable) in every mode
 - **Field Name Mapping**: Automatically maps regex named groups to field names
 - **Declared Input Window**: `skipHeaderLines`/`skipFooterLines` travel with the entity
-- **Subclass Aliases**: `@StructureName` lets a sealed subclass keep a readable name while
-  matching a short discriminator token in the input
+- **Name Aliases**: `@StructureName` lets a sealed subclass or an enum constant keep a readable
+  name while matching the short token the input spells it with
 - **Extensible**: Easy to add support for additional types in `BaseEntity`
 
 ## Generation Modes
@@ -115,7 +115,8 @@ sealed class DanceMove {
 
 `@StructureName` is entirely optional — subclasses without it keep using their class name, so
 existing entities need no changes. Values are matched case-insensitively (`"s"` and `"S"` are
-equivalent), and two subclasses resolving to the same token is a compile-time error.
+equivalent), and two subclasses resolving to the same token is a compile-time error. The same
+annotation aliases [enum constants](#enum-constant-aliases).
 
 ### Enum Mode (IStructureEnum)
 
@@ -132,6 +133,29 @@ This is the only mode where the regex is optional, because there is no named gro
 whole token is matched against the constant names, ignoring case and reading spaces as underscores.
 A token that matches nothing throws rather than parsing as null. The enum's own constructor is
 ignored, so constants may carry data (`enum class Spell(val cost: Int)`) and still be parsed.
+
+#### Enum Constant Aliases
+
+When the input spells a constant with a token too short to name it by, `@StructureName` on the
+constant replaces the name it is matched by — in enum mode and on an enum field alike:
+
+```kotlin
+enum class Turn {
+    @StructureName("L")
+    Left,
+
+    @StructureName("R")
+    Right,
+}
+// "L4" -> WalkerInstruction(Turn.Left, 4)
+```
+
+The alias replaces the constant name rather than joining it, so `Left` above is reached by `"l"`
+and no longer by `"left"` — the same rule the subclass discriminators follow. Tokens are matched
+case-insensitively, and two constants of one enum resolving to the same token is a compile-time
+error. Unlike everything else in the framework the alias is read at runtime, by
+`BaseEntity.asNullableEnum`, so it applies wherever the enum is parsed rather than only where a
+companion was generated.
 
 Do not confuse this with an enum **field**, which needs no mode at all and has been supported all
 along:
@@ -266,7 +290,8 @@ trimming that belongs to one puzzle rather than to the entity.
 \*\* Strictly `true` or `false`; anything else is a missing value rather than a silent `false`.
 
 \*\*\* Any enum works without a converter. The group value is matched against the constant names
-ignoring case, with spaces read as underscores (`turn on` -> `TURN_ON`). A `@FieldConverter` on an
+ignoring case, with spaces read as underscores (`turn on` -> `TURN_ON`), or against the token an
+[`@StructureName`](#enum-constant-aliases) constant names instead. A `@FieldConverter` on an
 enum field still wins, which is how `BitOperationConverter` keeps its `DIRECT` fallback for an
 absent group. The same matching resolves a whole enum entity — see
 [Enum Mode](#enum-mode-istructureenum) — because both routes go through
@@ -405,8 +430,8 @@ Every misuse is reported on the declaration that caused it rather than on a line
 - `@FromMatch` outside `customLine`/`lineBased`, a part that belongs to the other mode, or a part
   on a parameter of the wrong type
 - `@FromMatch(ALL_MATCHES)` whose element type has no primary constructor taking a single `String`
-- `@StructureName` that is blank, duplicated across subclasses, or outside a `multiStructure`
-  hierarchy - where it would otherwise be a silent no-op
+- `@StructureName` that is blank, duplicated across the subclasses of one hierarchy or the
+  constants of one enum, or on anything but those two - where it would otherwise be a silent no-op
 - A `multiStructure` sealed class with no subclasses, a class with no primary constructor, or one
   with no parameters
 
@@ -424,7 +449,7 @@ ksp-annotations/                      # runtime API, no KSP dependency
     ├── TypeConverter.kt              # Custom converter interface
     ├── BaseEntity.kt                 # Type conversion helpers
     ├── FromMatch.kt                  # Non-group match sources (LINE/RANGE/ALL_MATCHES)
-    ├── StructureName.kt              # Optional subclass discriminator alias
+    ├── StructureName.kt              # Optional subclass/enum constant token alias
     ├── IStructureSkips.kt            # skipHeaderLines/skipFooterLines carried by every companion
     ├── IStructure.kt                 # Base interface
     ├── IStructureLine.kt             # Line-based interface (findAll -> List<T>)

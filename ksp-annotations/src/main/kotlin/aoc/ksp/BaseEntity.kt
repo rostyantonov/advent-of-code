@@ -1,5 +1,7 @@
 package aoc.ksp
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Regex-group accessors used by the code the KSP StructureProcessor generates.
  *
@@ -80,7 +82,7 @@ object BaseEntity {
             ?: throw IllegalArgumentException(
                 "Field '$name' (expected ${T::class.simpleName}) not found or invalid in regex groups. " +
                     "Ensure regex has named group (?<$name>...) and that it matches one of " +
-                    enumValues<T>().joinToString(", ") { it.name },
+                    acceptedTokens(T::class.java).joinToString(", "),
             )
 
     /** The group value read as a [T] constant; see [asNullableEnum] for how the text is matched. */
@@ -97,7 +99,7 @@ object BaseEntity {
         asNullableEnum<T>(raw)
             ?: throw IllegalArgumentException(
                 "'$raw' is not a ${T::class.simpleName}; expected one of " +
-                    enumValues<T>().joinToString(", ") { it.name },
+                    acceptedTokens(T::class.java).joinToString(", "),
             )
 
     /**
@@ -108,7 +110,45 @@ object BaseEntity {
      * disagree about what a token means.
      */
     inline fun <reified T : Enum<T>> asNullableEnum(raw: String): T? {
-        val normalised = raw.trim().replace(' ', '_').uppercase()
-        return enumValues<T>().firstOrNull { it.name == normalised }
+        @Suppress("UNCHECKED_CAST")
+        return tokenTable(T::class.java)[normaliseToken(raw)] as T?
     }
+
+    /**
+     * The tokens an enum answers to, in declaration order, for the messages thrown when none of them
+     * matched.
+     */
+    fun acceptedTokens(type: Class<out Enum<*>>): Collection<String> = tokenTable(type).keys
+
+    /**
+     * How input text is folded onto a token: case is ignored and spaces stand in for underscores,
+     * so "turn on" reaches TURN_ON and "l" reaches an `@StructureName("L")`.
+     *
+     * Public only because [asNullableEnum] is inline; nothing outside [BaseEntity] needs to call it.
+     */
+    fun normaliseToken(raw: String): String = raw.trim().replace(' ', '_').uppercase()
+
+    /**
+     * The normalised token of every constant of [type], mapped to the constant itself.
+     *
+     * A constant is spelled by its own name unless [StructureName] gives it one - the alias replaces
+     * the name rather than joining it, exactly as it does for a sealed subclass discriminator, so
+     * `@StructureName("L") Left` answers to "L" and not to "LEFT". The processor rejects two
+     * constants claiming one token at compile time, so the last-wins here is unreachable from
+     * generated code.
+     *
+     * Cached per enum class: the table is derived by reflection, and the same enum is read once per
+     * input line otherwise.
+     *
+     * Public only because [asNullableEnum] is inline; nothing outside [BaseEntity] needs to call it.
+     */
+    fun tokenTable(type: Class<out Enum<*>>): Map<String, Enum<*>> =
+        tokenTables.computeIfAbsent(type) {
+            type.enumConstants.orEmpty().associateBy { constant ->
+                val alias = type.getField(constant.name).getAnnotation(StructureName::class.java)?.value
+                normaliseToken(alias ?: constant.name)
+            }
+        }
+
+    private val tokenTables = ConcurrentHashMap<Class<out Enum<*>>, Map<String, Enum<*>>>()
 }

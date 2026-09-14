@@ -1,6 +1,7 @@
 package aoc.common.entity
 
 import aoc.ksp.BaseEntity
+import aoc.ksp.StructureName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
@@ -66,5 +67,40 @@ class BaseEntityTest {
         assertNull(BaseEntity.getAsNullableInt(match.groups, "num"))
         assertNull(BaseEntity.getAsNullableString(match.groups, "num"))
         assertNull(BaseEntity.getAsNullableChar(match.groups, "num"))
+    }
+
+    private enum class Switch {
+        TURN_ON,
+
+        @StructureName("L")
+        Left,
+    }
+
+    @Test
+    fun `test asEnum matches a constant name ignoring case and spaces`() {
+        assertEquals(Switch.TURN_ON, BaseEntity.asEnum<Switch>("turn on"))
+        assertEquals(Switch.TURN_ON, BaseEntity.asEnum<Switch>(" TURN_ON "))
+    }
+
+    @Test
+    fun `test asEnum matches the token StructureName names`() {
+        assertEquals(Switch.Left, BaseEntity.asEnum<Switch>("L"))
+        assertEquals(Switch.Left, BaseEntity.asEnum<Switch>("l"))
+    }
+
+    @Test
+    fun `test an aliased constant no longer answers to its own name`() {
+        assertNull(BaseEntity.asNullableEnum<Switch>("Left"))
+
+        val thrown = assertThrows<IllegalArgumentException> { BaseEntity.asEnum<Switch>("Left") }
+        assertEquals("'Left' is not a Switch; expected one of TURN_ON, L", thrown.message)
+    }
+
+    @Test
+    fun `test getAsEnum reads the alias out of a named group`() {
+        val regex = Regex("(?<direction>[A-Z])")
+        val match = regex.matchEntire("L")!!
+
+        assertEquals(Switch.Left, BaseEntity.getAsEnum<Switch>(match.groups, "direction"))
     }
 }

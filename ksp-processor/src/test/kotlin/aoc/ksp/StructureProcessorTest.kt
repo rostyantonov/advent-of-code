@@ -320,6 +320,35 @@ class StructureProcessorTest {
     }
 
     @Test
+    fun `an enum entity constant is reached by the token StructureName names`() {
+        val result =
+            CompilationFixture.process(
+                entity(
+                    name = "Rotation",
+                    imports = listOf("aoc.ksp.GenerateStructure", "aoc.ksp.StructureName"),
+                    body =
+                        """
+                        @GenerateStructure
+                        enum class Rotation {
+                            @StructureName("L")
+                            Left,
+
+                            @StructureName("R")
+                            Right,
+                        }
+                        """.trimIndent(),
+                ),
+            )
+
+        assertTrue(result.succeeded, result.messages)
+        val companion = assertNotNull(result.companionFor("Rotation"))
+        // Matching stays in BaseEntity, so the alias changes the documented example rather than
+        // the generated call.
+        assertContains(companion, "BaseEntity.asEnum<Rotation>(token)")
+        assertContains(companion, """fromLine("L")   // -> Rotation.Left""")
+    }
+
+    @Test
     fun `an enum entity whose constants carry data ignores the constructor`() {
         val result =
             CompilationFixture.process(
