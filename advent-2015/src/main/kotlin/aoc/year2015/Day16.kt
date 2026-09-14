@@ -8,16 +8,17 @@ import aoc.year2015.entity.AuntCompanion
 class Day16 : AoCFileInput<List<Aunt>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "Sue (?<index>\\d+): " +
-                            "(?<param1name>\\w+): (?<param1val>\\d+), " +
-                            "(?<param2name>\\w+): (?<param2val>\\d+), " +
-                            "(?<param3name>\\w+): (?<param3val>\\d+)",
-                    ),
-                builder = AuntCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "Sue (?<index>\\d+): " +
+                                "(?<param1name>\\w+): (?<param1val>\\d+), " +
+                                "(?<param2name>\\w+): (?<param2val>\\d+), " +
+                                "(?<param3name>\\w+): (?<param3val>\\d+)",
+                        ),
+                    structure = AuntCompanion,
+                )::getStructInput
 
     private val matchingAunt =
         mutableMapOf<String, Int>().apply {

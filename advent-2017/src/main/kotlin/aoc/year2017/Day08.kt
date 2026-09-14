@@ -14,13 +14,14 @@ import aoc.year2017.entity.InstructionCompanion
 class Day08 : AoCFileInput<List<Instruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<register>\\w+) (?<operation>inc|dec) (?<amount>-?\\d+) if (?<condRegister>\\w+) (?<condOperator>[><=!]+) (?<condAmount>-?\\d+)",
-                    ),
-                builder = InstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<register>\\w+) (?<operation>inc|dec) (?<amount>-?\\d+) if (?<condRegister>\\w+) (?<condOperator>[><=!]+) (?<condAmount>-?\\d+)",
+                        ),
+                    structure = InstructionCompanion,
+                )::getStructInput
 
     private val registers = mutableMapOf<String, Int>()
     private var highestValueEver = 0

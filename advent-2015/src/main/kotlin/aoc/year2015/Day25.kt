@@ -8,14 +8,15 @@ import aoc.common.input.StructuredInput
 class Day25 : AoCFileInput<List<Position>, Long>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "To continue, please consult the code grid in the manual. +" +
-                            "Enter the code at row (?<row>\\d+), column (?<col>\\d+).",
-                    ),
-                builder = PositionCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "To continue, please consult the code grid in the manual. +" +
+                                "Enter the code at row (?<row>\\d+), column (?<col>\\d+).",
+                        ),
+                    structure = PositionCompanion,
+                )::getStructInput
 
     /**
      * Merry Christmas! Santa is booting up his weather machine; looks like you might get a white Christmas after all.

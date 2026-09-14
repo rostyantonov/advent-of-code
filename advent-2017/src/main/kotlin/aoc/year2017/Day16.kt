@@ -7,16 +7,18 @@ import aoc.year2017.entity.DanceMoveCompanion
 
 class Day16 : AoCFileInput<List<DanceMove>, String>() {
     override val inputFunction
-        get() = StructuredMultiInput(
-            regexArray =
-                arrayOf(
-                    Regex("(?<type>s)(?<steps>\\d+)"),
-                    Regex("(?<type>x)(?<from>\\d+)/(?<to>\\d+)"),
-                    Regex("(?<type>p)(?<from>\\w)/(?<to>\\w)"),
-                ),
-            builder = DanceMoveCompanion::fromLine,
-            splitBy = ",",
-        )::getFirstLineStructInput
+        get() =
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            Regex("(?<type>s)(?<steps>\\d+)"),
+                            Regex("(?<type>x)(?<from>\\d+)/(?<to>\\d+)"),
+                            Regex("(?<type>p)(?<from>\\w)/(?<to>\\w)"),
+                        ),
+                    structure = DanceMoveCompanion,
+                    splitBy = ",",
+                )::getFirstLineStructInput
 
     /**
      * You come upon a very unusual sight; a group of programs here appear to be dancing.

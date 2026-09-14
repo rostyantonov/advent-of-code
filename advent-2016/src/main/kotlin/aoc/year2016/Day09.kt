@@ -7,10 +7,12 @@ import aoc.year2016.entity.DecompressCompanion
 
 class Day09 : AoCFileInput<List<Decompress>, Long>() {
     override val inputFunction
-        get() = StructuredInput(
-            Regex("\\((?<num>\\d+)x(?<times>\\d+)\\)"),
-            builder = DecompressCompanion::fromLine,
-        )::getSingleStructInput
+        get() =
+            StructuredInput
+                .of(
+                    Regex("\\((?<num>\\d+)x(?<times>\\d+)\\)"),
+                    structure = DecompressCompanion,
+                )::getSingleStructInput
 
     /**
      * Wandering around a secure area, you come across a datalink port to a new part of the network.

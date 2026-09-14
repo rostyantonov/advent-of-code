@@ -10,17 +10,18 @@ import aoc.year2016.entity.FactoryLineCompanion
 class Day10 : AoCFileInput<List<FactoryLine>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        Regex("(?<cmd>value) (?<value>\\d+) goes to (?<typeOut>bot) (?<outId>\\d+)"),
-                        Regex(
-                            "(?<cmd>bot) (?<botId>\\d+) gives low to (?<lowOut>bot|output) (?<lowId>\\d+)" +
-                                " and high to (?<highOut>bot|output) (?<highId>\\d+)",
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            Regex("(?<cmd>value) (?<value>\\d+) goes to (?<typeOut>bot) (?<outId>\\d+)"),
+                            Regex(
+                                "(?<cmd>bot) (?<botId>\\d+) gives low to (?<lowOut>bot|output) (?<lowId>\\d+)" +
+                                    " and high to (?<highOut>bot|output) (?<highId>\\d+)",
+                            ),
                         ),
-                    ),
-                builder = FactoryLineCompanion::fromLine,
-            )::getStructInput
+                    structure = FactoryLineCompanion,
+                )::getStructInput
 
     private val initialValues by lazy { input.filterIsInstance<Value>().toMutableList() }
     private val bots by lazy { input.filterIsInstance<Bot>().associateBy { it.botId } }

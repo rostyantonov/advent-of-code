@@ -15,15 +15,16 @@ import aoc.year2016.entity.CardCompanion
 class Day08 : AoCFileInput<List<Card>, String>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        Regex("(?<cmd>rect) (?<xPos>\\d+)x(?<yPos>\\d+)"),
-                        Regex("rotate (?<cmd>column) x=(?<column>\\d+) by (?<amount>\\d+)"),
-                        Regex("rotate (?<cmd>row) y=(?<row>\\d+) by (?<amount>\\d+)"),
-                    ),
-                builder = CardCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            Regex("(?<cmd>rect) (?<xPos>\\d+)x(?<yPos>\\d+)"),
+                            Regex("rotate (?<cmd>column) x=(?<column>\\d+) by (?<amount>\\d+)"),
+                            Regex("rotate (?<cmd>row) y=(?<row>\\d+) by (?<amount>\\d+)"),
+                        ),
+                    structure = CardCompanion,
+                )::getStructInput
 
     private val width: Int = 50
     private val height: Int = 6

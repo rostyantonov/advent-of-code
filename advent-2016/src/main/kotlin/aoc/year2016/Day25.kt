@@ -11,17 +11,18 @@ import aoc.year2016.entity.ClockSignalComputer
 class Day25 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        AsmInstructionPatterns.CPY_REG,
-                        AsmInstructionPatterns.INC_REG,
-                        AsmInstructionPatterns.DEC_REG,
-                        AsmInstructionPatterns.JNZ_REG,
-                        AsmInstructionPatterns.OUT_REG,
-                    ),
-                builder = AsmInstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            AsmInstructionPatterns.CPY_REG,
+                            AsmInstructionPatterns.INC_REG,
+                            AsmInstructionPatterns.DEC_REG,
+                            AsmInstructionPatterns.JNZ_REG,
+                            AsmInstructionPatterns.OUT_REG,
+                        ),
+                    structure = AsmInstructionCompanion,
+                )::getStructInput
 
     /**
      * Day 25: Clock Signal

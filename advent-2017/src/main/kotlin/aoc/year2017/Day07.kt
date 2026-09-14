@@ -8,13 +8,14 @@ import aoc.year2017.entity.TowerCompanion
 class Day07 : AoCFileInput<List<Tower>, String>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<name>\\w+) \\((?<weight>\\d+)\\)(?: -> (?<items>[\\w, ]+))?",
-                    ),
-                builder = TowerCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<name>\\w+) \\((?<weight>\\d+)\\)(?: -> (?<items>[\\w, ]+))?",
+                        ),
+                    structure = TowerCompanion,
+                )::getStructInput
 
     /**
      * Wandering further through the circuits of the computer, you come upon a tower of programs that have gotten

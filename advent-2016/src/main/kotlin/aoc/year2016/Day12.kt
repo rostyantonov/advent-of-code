@@ -12,16 +12,17 @@ import aoc.common.input.StructuredMultiInput
 class Day12 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        AsmInstructionPatterns.CPY_REG,
-                        AsmInstructionPatterns.INC_REG,
-                        AsmInstructionPatterns.DEC_REG,
-                        AsmInstructionPatterns.JNZ_REG,
-                    ),
-                builder = AsmInstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            AsmInstructionPatterns.CPY_REG,
+                            AsmInstructionPatterns.INC_REG,
+                            AsmInstructionPatterns.DEC_REG,
+                            AsmInstructionPatterns.JNZ_REG,
+                        ),
+                    structure = AsmInstructionCompanion,
+                )::getStructInput
 
     /**
      * You finally reach the top floor of this building: a garden with a slanted glass ceiling. Looks like there

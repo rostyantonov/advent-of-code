@@ -11,17 +11,18 @@ import aoc.year2016.entity.TogglingAsmComputer
 class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        AsmInstructionPatterns.CPY_REG,
-                        AsmInstructionPatterns.INC_REG,
-                        AsmInstructionPatterns.DEC_REG,
-                        AsmInstructionPatterns.JNZ_REG,
-                        AsmInstructionPatterns.TGL_REG,
-                    ),
-                builder = AsmInstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            AsmInstructionPatterns.CPY_REG,
+                            AsmInstructionPatterns.INC_REG,
+                            AsmInstructionPatterns.DEC_REG,
+                            AsmInstructionPatterns.JNZ_REG,
+                            AsmInstructionPatterns.TGL_REG,
+                        ),
+                    structure = AsmInstructionCompanion,
+                )::getStructInput
 
     /**
      * This is one of the top floors of the nicest tower in EBHQ. The Easter Bunny's private office is here,

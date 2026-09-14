@@ -8,15 +8,16 @@ import aoc.year2016.entity.RoomCompanion
 class Day04 : AoCFileInput<List<Room>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<name>[\\w-]+)" +
-                            "(?<id>\\d{3})" +
-                            "\\[(?<hash>\\w{5})]",
-                    ),
-                builder = RoomCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<name>[\\w-]+)" +
+                                "(?<id>\\d{3})" +
+                                "\\[(?<hash>\\w{5})]",
+                        ),
+                    structure = RoomCompanion,
+                )::getStructInput
 
     /**
      * Finally, you come across an information kiosk with a list of rooms. Of course, the list is encrypted

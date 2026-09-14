@@ -11,19 +11,20 @@ import aoc.year2016.entity.ScrambleOperationCompanion
 class Day21 : AoCFileInput<List<ScrambleOperation>, String>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        Regex("swap (?<cmd>position) (?<x>\\d+) with position (?<y>\\d+)"),
-                        Regex("swap (?<cmd>letter) (?<x>\\w) with letter (?<y>\\w)"),
-                        Regex("rotate (?<cmd>left) (?<steps>\\d+) steps?"),
-                        Regex("rotate (?<cmd>right) (?<steps>\\d+) steps?"),
-                        Regex("rotate (?<cmd>based) on position of letter (?<letter>\\w)"),
-                        Regex("(?<cmd>reverse) positions (?<x>\\d+) through (?<y>\\d+)"),
-                        Regex("(?<cmd>move) position (?<x>\\d+) to position (?<y>\\d+)"),
-                    ),
-                builder = ScrambleOperationCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            Regex("swap (?<cmd>position) (?<x>\\d+) with position (?<y>\\d+)"),
+                            Regex("swap (?<cmd>letter) (?<x>\\w) with letter (?<y>\\w)"),
+                            Regex("rotate (?<cmd>left) (?<steps>\\d+) steps?"),
+                            Regex("rotate (?<cmd>right) (?<steps>\\d+) steps?"),
+                            Regex("rotate (?<cmd>based) on position of letter (?<letter>\\w)"),
+                            Regex("(?<cmd>reverse) positions (?<x>\\d+) through (?<y>\\d+)"),
+                            Regex("(?<cmd>move) position (?<x>\\d+) to position (?<y>\\d+)"),
+                        ),
+                    structure = ScrambleOperationCompanion,
+                )::getStructInput
 
     /**
      * The computer system you're breaking into uses a weird scrambling function to store its passwords.

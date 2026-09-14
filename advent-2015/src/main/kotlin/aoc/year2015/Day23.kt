@@ -12,18 +12,19 @@ import aoc.common.input.StructuredMultiInput
 class Day23 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        AsmInstructionPatterns.HLF_REG,
-                        AsmInstructionPatterns.TPL_REG,
-                        AsmInstructionPatterns.INC_REG,
-                        AsmInstructionPatterns.JMP_REG,
-                        AsmInstructionPatterns.JIE_REG,
-                        AsmInstructionPatterns.JIO_REG,
-                    ),
-                builder = AsmInstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            AsmInstructionPatterns.HLF_REG,
+                            AsmInstructionPatterns.TPL_REG,
+                            AsmInstructionPatterns.INC_REG,
+                            AsmInstructionPatterns.JMP_REG,
+                            AsmInstructionPatterns.JIE_REG,
+                            AsmInstructionPatterns.JIO_REG,
+                        ),
+                    structure = AsmInstructionCompanion,
+                )::getStructInput
 
     /**
      * Little Jane Marie just got her very first computer for Christmas from some unknown benefactor. It comes

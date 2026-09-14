@@ -8,10 +8,11 @@ import aoc.year2015.entity.PresentCompanion
 class Day02 : AoCFileInput<List<Present>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex = Regex("(?<length>\\d+)x(?<width>\\d+)x(?<height>\\d+)"),
-                builder = PresentCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex = Regex("(?<length>\\d+)x(?<width>\\d+)x(?<height>\\d+)"),
+                    structure = PresentCompanion,
+                )::getStructInput
 
     /**
      * The elves are running low on wrapping paper, and so they need to submit an order for more.

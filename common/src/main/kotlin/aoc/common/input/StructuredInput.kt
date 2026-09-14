@@ -20,12 +20,14 @@ import kotlin.reflect.KFunction2
  *
  * Example usage:
  * ```kotlin
- * val inputFunction = StructuredInput(
+ * val inputFunction = StructuredInput.of(
  *     regex = Regex("""(?<name>\w+): (?<value>\d+)"""),
- *     builder = MyEntityCompanion::fromLine,
- *     skipHeaderLines = 2  // Skip 2 header lines
+ *     structure = MyEntityCompanion,
  * )::getStructInput
  * ```
+ *
+ * Prefer the [of] factories: they read the skip counts off the generated companion. The constructor
+ * is for trimming that belongs to one puzzle rather than to the entity.
  */
 class StructuredInput<Structure>(
     private val regex: Regex?,

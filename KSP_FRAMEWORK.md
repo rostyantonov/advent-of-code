@@ -163,10 +163,12 @@ val instructions = WalkerInstructionCompanion.fromLine("R3, L5, R2, L2", regex)
 ```kotlin
 class MyDay : AoCFileInput<List<Person>, Int>() {
     override val inputFunction
-        get() = StructuredInput(
-            regex = Regex("(?<name>\\w+) age (?<age>\\d+) score (?<score>\\d+)"),
-            builder = PersonCompanion::fromLine,
-        )::getStructInput
+        get() =
+            StructuredInput
+                .of(
+                    regex = Regex("(?<name>\\w+) age (?<age>\\d+) score (?<score>\\d+)"),
+                    structure = PersonCompanion,
+                )::getStructInput
     
     override fun processPartOne(): Int {
         return input.sumOf { it.score }
@@ -178,10 +180,12 @@ class MyDay : AoCFileInput<List<Person>, Int>() {
 ```kotlin
 class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
     override val inputFunction
-        get() = StructuredInput<List<WalkerInstruction>>(
-            regex = Regex("(?<direction>[LR])(?<steps>\\d+)"),
-            builder = WalkerInstructionCompanion::fromLine,
-        )::getSingleStructInput
+        get() =
+            StructuredInput
+                .of(
+                    regex = Regex("(?<direction>[LR])(?<steps>\\d+)"),
+                    structure = WalkerInstructionCompanion,
+                )::getSingleStructInput
     
     override fun processPartOne(): Int {
         // input is already List<WalkerInstruction> from parsing the single line

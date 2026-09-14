@@ -11,14 +11,15 @@ class Day14 : AoCFileInput<List<Reindeer>, Int>() {
 
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<name>\\w+) can fly (?<speed>\\d+) km/s for (?<moveTime>\\d+) seconds," +
-                            " but then must rest for (?<waitTime>\\w+) seconds\\.",
-                    ),
-                builder = ReindeerCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<name>\\w+) can fly (?<speed>\\d+) km/s for (?<moveTime>\\d+) seconds," +
+                                " but then must rest for (?<waitTime>\\w+) seconds\\.",
+                        ),
+                    structure = ReindeerCompanion,
+                )::getStructInput
 
     /**
      * This year is the Reindeer Olympics! Reindeer can fly at high speeds, but must rest occasionally to

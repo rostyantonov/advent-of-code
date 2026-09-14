@@ -8,13 +8,14 @@ import aoc.year2016.entity.DiscCompanion
 class Day15 : AoCFileInput<List<Disc>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "Disc #(?<depth>\\d+) has (?<positions>\\d+) positions; at time=0, it is at position (?<start>\\d+).",
-                    ),
-                builder = DiscCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "Disc #(?<depth>\\d+) has (?<positions>\\d+) positions; at time=0, it is at position (?<start>\\d+).",
+                        ),
+                    structure = DiscCompanion,
+                )::getStructInput
 
     /**
      * The halls open into an interior plaza containing a large kinetic sculpture. The sculpture is in a sealed

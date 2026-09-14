@@ -11,10 +11,11 @@ import aoc.year2015.entity.Path
 class Day09 : AoCFileInput<List<Connection>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex = Regex("(?<from>\\w+) to (?<to>\\w+) = (?<value>\\d+)"),
-                builder = ConnectionCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex = Regex("(?<from>\\w+) to (?<to>\\w+) = (?<value>\\d+)"),
+                    structure = ConnectionCompanion,
+                )::getStructInput
 
     private val links: List<Path> by lazy {
         Path.getAllPaths(

@@ -16,17 +16,18 @@ import aoc.year2015.entity.InstructionCompanion
 class Day06 : AoCFileInput<List<Instruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<cmd>turn on|turn off|toggle)" +
-                            " " +
-                            "(?<start>\\d+,\\d+)" +
-                            " through " +
-                            "(?<end>\\d+,\\d+)",
-                    ),
-                builder = InstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<cmd>turn on|turn off|toggle)" +
+                                " " +
+                                "(?<start>\\d+,\\d+)" +
+                                " through " +
+                                "(?<end>\\d+,\\d+)",
+                        ),
+                    structure = InstructionCompanion,
+                )::getStructInput
 
     /**
      * Because your neighbors keep defeating you in the holiday house decorating contest year after year,

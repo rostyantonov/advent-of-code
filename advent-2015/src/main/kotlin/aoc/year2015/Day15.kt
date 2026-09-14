@@ -8,14 +8,15 @@ import aoc.year2015.entity.IngredientCompanion
 class Day15 : AoCFileInput<List<Ingredient>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<name>\\w+): capacity (?<capacity>-?\\d+), durability (?<durability>-?\\d+), " +
-                            "flavor (?<flavor>-?\\d+), texture (?<texture>-?\\d+), calories (?<calories>-?\\d+)",
-                    ),
-                builder = IngredientCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<name>\\w+): capacity (?<capacity>-?\\d+), durability (?<durability>-?\\d+), " +
+                                "flavor (?<flavor>-?\\d+), texture (?<texture>-?\\d+), calories (?<calories>-?\\d+)",
+                        ),
+                    structure = IngredientCompanion,
+                )::getStructInput
 
     private val teaSpoons: IntArray by lazy {
         IntArray(input.size) { 0 }

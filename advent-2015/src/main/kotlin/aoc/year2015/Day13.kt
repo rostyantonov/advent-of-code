@@ -11,14 +11,15 @@ import aoc.year2015.entity.Path
 class Day13 : AoCFileInput<List<Attendee>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<who>\\w+) would (?<state>\\w+) (?<rawAmount>\\d+)" +
-                            " happiness units by sitting next to (?<to>\\w+)\\.",
-                    ),
-                builder = AttendeeCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<who>\\w+) would (?<state>\\w+) (?<rawAmount>\\d+)" +
+                                " happiness units by sitting next to (?<to>\\w+)\\.",
+                        ),
+                    structure = AttendeeCompanion,
+                )::getStructInput
 
     private lateinit var updatedInput: List<Attendee>
 

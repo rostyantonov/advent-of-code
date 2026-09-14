@@ -18,17 +18,19 @@ class Day19 : AoCFileInput<Pair<List<Replacement>, Molecule>, Int>() {
 
     private val firstFunction
         get() =
-            StructuredInput(
-                regex = Regex("(?<what>\\w+) => (?<replace>\\w+)"),
-                builder = ReplacementCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex = Regex("(?<what>\\w+) => (?<replace>\\w+)"),
+                    structure = ReplacementCompanion,
+                )::getStructInput
 
     private val secondFunction
         get() =
-            StructuredInput(
-                regex = Regex("[A-Z][a-df-z]|[A-Z]|e"),
-                builder = MoleculeCompanion::fromLine,
-            )::getSingleStructInput
+            StructuredInput
+                .of(
+                    regex = Regex("[A-Z][a-df-z]|[A-Z]|e"),
+                    structure = MoleculeCompanion,
+                )::getSingleStructInput
 
     /**
      * Rudolph the Red-Nosed Reindeer is sick! His nose isn't shining very brightly, and he needs medicine.

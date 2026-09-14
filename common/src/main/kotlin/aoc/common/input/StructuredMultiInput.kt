@@ -20,15 +20,17 @@ import kotlin.reflect.KFunction2
  *
  * Example usage:
  * ```kotlin
- * val inputFunction = StructuredMultiInput(
+ * val inputFunction = StructuredMultiInput.of(
  *     regexArray = arrayOf(
  *         Regex("""pattern1"""),
  *         Regex("""pattern2""")
  *     ),
- *     builder = MySealedClassCompanion::fromLine,
- *     skipHeaderLines = 1
+ *     structure = MySealedClassCompanion,
  * )::getStructInput
  * ```
+ *
+ * Prefer the [of] factory: it reads the skip counts off the generated companion. The constructor is
+ * for trimming that belongs to one puzzle rather than to the entity.
  */
 class StructuredMultiInput<Structure>(
     private val regexArray: Array<Regex>,
@@ -69,12 +71,14 @@ class StructuredMultiInput<Structure>(
         fun <Type : Any> of(
             regexArray: Array<Regex>,
             structure: IStructureMulti<Type>,
+            splitBy: String? = null,
         ): StructuredMultiInput<Type> =
             StructuredMultiInput(
                 regexArray,
                 structure::fromLine,
                 structure.skipHeaderLines,
                 structure.skipFooterLines,
+                splitBy,
             )
     }
 }

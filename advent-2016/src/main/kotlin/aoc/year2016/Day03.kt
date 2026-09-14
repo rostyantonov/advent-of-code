@@ -8,15 +8,16 @@ import aoc.year2016.entity.TriangleCompanion
 class Day03 : AoCFileInput<List<Triangle>, Int>() {
     override val inputFunction: (List<String>) -> List<Triangle>
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        " *(?<aSide>\\d+)" +
-                            " +(?<bSide>\\d+)" +
-                            " +(?<cSide>\\d+)",
-                    ),
-                builder = TriangleCompanion::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            " *(?<aSide>\\d+)" +
+                                " +(?<bSide>\\d+)" +
+                                " +(?<cSide>\\d+)",
+                        ),
+                    structure = TriangleCompanion,
+                )::getStructInput
 
     /**
      * Now that you can think clearly, you move deeper into the labyrinth of hallways and office furniture that

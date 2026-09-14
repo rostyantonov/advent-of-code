@@ -12,13 +12,14 @@ import kotlin.collections.mutableSetOf
 class Day11 : AoCFileInput<List<Floor>, Int>() {
     override val inputFunction
         get() =
-            StructuredInput(
-                regex =
-                    Regex(
-                        "(?<powerEntity>(?<name>\\w+)(?:-compatible)? (?<type>generator|microchip))",
-                    ),
-                builder = Floor::fromLine,
-            )::getStructInput
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<powerEntity>(?<name>\\w+)(?:-compatible)? (?<type>generator|microchip))",
+                        ),
+                    structure = Floor,
+                )::getStructInput
 
     /**
      * You come upon a column of four floors that have been entirely sealed off from the rest of the building

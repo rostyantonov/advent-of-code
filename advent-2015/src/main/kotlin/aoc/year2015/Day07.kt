@@ -7,13 +7,15 @@ import aoc.year2015.entity.WireNodeCompanion
 
 class Day07 : AoCFileInput<List<WireNode>, Int>() {
     override val inputFunction
-        get() = StructuredInput(
-            regex =
-                Regex(
-                    "(?<left>[\\da-z]+)? *(?<cmd>NOT|AND|OR|LSHIFT|RSHIFT)? *(?<right>[\\da-z]+)? -> (?<name>[a-z]+)",
-                ),
-            builder = WireNodeCompanion::fromLine,
-        )::getStructInput
+        get() =
+            StructuredInput
+                .of(
+                    regex =
+                        Regex(
+                            "(?<left>[\\da-z]+)? *(?<cmd>NOT|AND|OR|LSHIFT|RSHIFT)? *(?<right>[\\da-z]+)? -> (?<name>[a-z]+)",
+                        ),
+                    structure = WireNodeCompanion,
+                )::getStructInput
 
     private lateinit var connectionsMap: MutableMap<String, WireNode>
 

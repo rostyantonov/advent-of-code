@@ -11,10 +11,12 @@ import aoc.year2016.entity.WalkerInstructionCompanion
 
 class Day01 : AoCFileInput<List<WalkerInstruction>, Int>() {
     override val inputFunction
-        get() = StructuredInput(
-            regex = Regex("(?<direction>[LR])(?<steps>\\d+)"),
-            builder = WalkerInstructionCompanion::fromLine,
-        )::getSingleStructInput
+        get() =
+            StructuredInput
+                .of(
+                    regex = Regex("(?<direction>[LR])(?<steps>\\d+)"),
+                    structure = WalkerInstructionCompanion,
+                )::getSingleStructInput
 
     /**
      * You're airdropped near Easter Bunny Headquarters in a city somewhere. "Near", unfortunately, is as close as

@@ -11,19 +11,20 @@ import aoc.year2017.entity.SoloDuetComputer
 class Day18 : AoCFileInput<List<AsmInstruction>, Int>() {
     override val inputFunction
         get() =
-            StructuredMultiInput(
-                regexArray =
-                    arrayOf(
-                        AsmInstructionPatterns.SND_REG,
-                        AsmInstructionPatterns.SET_REG,
-                        AsmInstructionPatterns.ADD_REG,
-                        AsmInstructionPatterns.MUL_REG,
-                        AsmInstructionPatterns.MOD_REG,
-                        AsmInstructionPatterns.RCV_REG,
-                        AsmInstructionPatterns.JGZ_REG,
-                    ),
-                builder = AsmInstructionCompanion::fromLine,
-            )::getStructInput
+            StructuredMultiInput
+                .of(
+                    regexArray =
+                        arrayOf(
+                            AsmInstructionPatterns.SND_REG,
+                            AsmInstructionPatterns.SET_REG,
+                            AsmInstructionPatterns.ADD_REG,
+                            AsmInstructionPatterns.MUL_REG,
+                            AsmInstructionPatterns.MOD_REG,
+                            AsmInstructionPatterns.RCV_REG,
+                            AsmInstructionPatterns.JGZ_REG,
+                        ),
+                    structure = AsmInstructionCompanion,
+                )::getStructInput
 
     /**
      * You discover a tablet containing some strange assembly code labeled simply "Duet". Rather than bother the
