@@ -10,6 +10,7 @@ import aoc.common.input.AoCFileInput
 import aoc.common.input.StructuredInput
 import aoc.year2017.entity.Instruction
 import aoc.year2017.entity.InstructionCompanion
+import aoc.year2017.entity.Operation
 
 class Day08 : AoCFileInput<List<Instruction>, Int>() {
     override val inputFunction
@@ -83,7 +84,7 @@ class Day08 : AoCFileInput<List<Instruction>, Int>() {
                 if (conditionResult) {
                     val registerValue = registers.get(instruction.register) ?: 0
                     registers[instruction.register] = registerValue +
-                        if (instruction.operation == "inc") instruction.amount else -instruction.amount
+                        if (instruction.operation == Operation.INC) instruction.amount else -instruction.amount
                     highestValueEver = maxOf(highestValueEver, registers[instruction.register]!!)
                 }
             }

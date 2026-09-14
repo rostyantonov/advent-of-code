@@ -5,7 +5,7 @@ import aoc.ksp.GenerateStructure
 @GenerateStructure
 data class Instruction(
     val register: String,
-    val operation: String,
+    val operation: Operation,
     val amount: Int,
     val condRegister: String,
     val condOperator: String,
