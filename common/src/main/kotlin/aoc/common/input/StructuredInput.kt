@@ -40,6 +40,14 @@ class StructuredInput<Structure>(
         }
 
     /**
+     * Parse input lines and return a single structured entity (first matching line).
+     *
+     * @param blockInput All input lines
+     * @return First parsed entity
+     */
+    fun getSingleStructInput(blockInput: List<String>): Structure = builder(blockInput.first(), regex)
+
+    /**
      * Factory that take the generated companion itself, so the skip counts declared on the entity
      * through `@GenerateStructure` travel with it instead of being repeated at every call site.
      */
