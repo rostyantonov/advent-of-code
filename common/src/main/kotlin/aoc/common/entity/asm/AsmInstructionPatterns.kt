@@ -12,21 +12,15 @@ object AsmInstructionPatterns {
     private const val REGISTER = "(?<register>\\w{1})" // Common register pattern
     private const val OFFSET_VALUE = "(?<offset>[+-]?\\d+)"
 
-    // Increment register pattern for 4-register system (a, b, c, d)
-    val INC_REG = Regex("(?<cmd>inc) $REGISTER")
+    val INCREMENT = Regex("(?<cmd>inc) $REGISTER")
 
-    // Half register pattern
-    val HLF_REG = Regex("(?<cmd>hlf) $REGISTER")
+    val HALVE = Regex("(?<cmd>hlf) $REGISTER")
 
-    // Triple register pattern
-    val TPL_REG = Regex("(?<cmd>tpl) $REGISTER")
+    val TRIPLE = Regex("(?<cmd>tpl) $REGISTER")
 
-    // Jump pattern
-    val JMP_REG = Regex("(?<cmd>jmp) $OFFSET_VALUE")
+    val JUMP = Regex("(?<cmd>jmp) $OFFSET_VALUE")
 
-    // Jump if even pattern
-    val JIE_REG = Regex("(?<cmd>jie) $REGISTER, $OFFSET_VALUE")
+    val JUMP_IF_EVEN = Regex("(?<cmd>jie) $REGISTER, $OFFSET_VALUE")
 
-    // Jump if one pattern for 2-register system
-    val JIO_REG = Regex("(?<cmd>jio) $REGISTER, $OFFSET_VALUE")
+    val JUMP_IF_ONE = Regex("(?<cmd>jio) $REGISTER, $OFFSET_VALUE")
 }
